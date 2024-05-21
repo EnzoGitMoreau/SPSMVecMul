@@ -13,17 +13,8 @@
 #include "matrix44.h"
 
 
-typedef std::tuple<int,int,int,Matrix44*> Tuple2;
-typedef std::deque<Tuple2> Queue2;
-struct mytuple
-{
-    Matrix44 matrix;
-    int index_x;
-    int index_y;
 
-};
-
-struct mytuplenew
+struct Block
 {
     real a0;
     real a1;
@@ -45,73 +36,9 @@ struct mytuplenew
     int index_y;
 };
 
-struct mytuplenewtriple
-{
-    int nbMatAdded;
-    
-    int index_x;
-    int index_y;
-    int index1_x;
-    int index1_y;
-    int index2_x;
-    int index2_y;
-    real a0;
-    real a1;
-    real a2;
-    real a3;
-    real a4;
-    real a5;
-    real a6;
-    real a7;
-    real a8;
-    real a9;
-    real aA;
-    real aB;
-    real aC;
-    real aD;
-    real aE;
-    real aF;
-    
-    real a10;
-    real a11;
-    real a12;
-    real a13;
-    real a14;
-    real a15;
-    real a16;
-    real a17;
-    real a18;
-    real a19;
-    real a1A;
-    real a1B;
-    real a1C;
-    real a1D;
-    real a1E;
-    real a1F;
-   
-    real a20;
-    real a21;
-    real a22;
-    real a23;
-    real a24;
-    real a25;
-    real a26;
-    real a27;
-    real a28;
-    real a29;
-    real a2A;
-    real a2B;
-    real a2C;
-    real a2D;
-    real a2E;
-    real a2F;
-    
-};
 
-typedef struct mytuple mytuple;
-typedef std::deque<mytuple> QueueT;
-typedef std::deque<mytuplenew> QueueN;
-typedef std::deque<mytuplenewtriple> QueueS;
+typedef std::deque<Block> QueueBlock;
+
 /**
  The block size 'S_BLOCK_SIZE' can be defined on the command line during compilation,
  and is otherwise set here, to match the dimensionality of the simulation
@@ -389,10 +316,10 @@ public:
     void vecMulMt(int nbThreads, const real* X, real* Y);
     void vecMulAddMt(int nbThreads, const real* X, real* Y);
     void calculate(std::deque<Queue2*>** workingPhases2, int phase_number, const real*X, real*Y, int big_mat_size);
-    void testFullCalcMt(int nbThreads, const real* X, real* Y);
-    void testFullCalcMtNtime(int nbThreads, const real* X, real* Y, int nTime);
-    void testFullCalcMtNtime2(int nbThreads, const real* X, real* Y, int nTime);
-    void testFullCalcMtNtime3(int nbThreads, const real* X, real* Y, int nTime);
+
+    void vecMulMt(int nbThreads, const real* X, real* Y, int nTime);
+    void vecMulMt2(int nbThreads, const real* X, real* Y, int nTime);
+
     void work2(int nbThreads, const real* X, real* Y);
 };
 

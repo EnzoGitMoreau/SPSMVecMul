@@ -1881,38 +1881,14 @@ void SparMatSymBlk::vecMulAddMt(int nbThreads, const real* X, real* Y)
    
 }
 
-void SparMatSymBlk::testFullCalcMt(int nbThreads, const real* X, real* Y)
+void SparMatSymBlk::vecMulMt(int nbThreads, const real* X, real* Y, int nTime)
 {
-    
-    MatSymBMtInstance mtInstance(this, 8);
-    //mtInstance.generateBlocks();
-    //KmtInstance.debugFunc();
-    mtInstance.vecMulAdd(X, Y);
-    
-}
-void SparMatSymBlk::testFullCalcMtNtime(int nbThreads, const real* X, real* Y, int nTime)
-{
-    
     MatSymBMtInstance mtInstance(this, nbThreads);
-    //mtInstance.generateBlocks();
-    //KmtInstance.debugFunc();
     mtInstance.vecMulAddnTimes(X, Y, nTime);
-    }
+}
 
-void SparMatSymBlk::testFullCalcMtNtime2(int nbThreads, const real* X, real* Y, int nTime)
+void SparMatSymBlk::vecMulMt2(int nbThreads, const real* X, real* Y, int nTime)
 {
-    
     MatSymBMtInstance mtInstance(this, nbThreads);
-    //mtInstance.generateBlocks();
-    //KmtInstance.debugFunc();
-    mtInstance.vecMulAddnTimes5(X, Y, nTime);
-    }
-
-void SparMatSymBlk::testFullCalcMtNtime3(int nbThreads, const real* X, real* Y, int nTime)
-{
-    
-    MatSymBMtInstance mtInstance(this, nbThreads);
-    //mtInstance.generateBlocks();
-    //KmtInstance.debugFunc();
-    mtInstance.vecMulAddnTimes4(X, Y, nTime);
-    }
+    mtInstance.vecMulAddnTimes2(X, Y, nTime);
+}

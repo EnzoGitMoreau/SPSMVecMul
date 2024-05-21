@@ -142,7 +142,7 @@ int main(int argc, char* argv[])
     //testMatrix.element(1,2) += bl ockTest.value(1,2);
     fillSMSB(5, size, 4, &testMatrix);
     //testMatrix.printSummary(std::cout, 0, 25);
-    testMatrix.prepareForMultiply(1);
+    
     
     omp_set_num_threads(1);
     
@@ -180,19 +180,14 @@ int main(int argc, char* argv[])
     
     std::vector<double> result_values(size);
     
-    std::cout << "Result of matrix-vector multiplication:" << std::endl;
+
    
     int nMatrix = 10000;
     int nThreads = 8;
     testMatrix.prepareForMultiply(1);
     
    
-    testMatrix.testFullCalcMtNtime2(nThreads, Vec, Y_res,nMatrix);
-    
-    //testMatrix.testFullCalcMt(8, Vec, Y_res);
- 
-    //GxB_Matrix_fprint(A,NULL,GxB_COMPLETE, NULL);
-   
+    testMatrix.vecMulMt(nThreads, Vec, Y_res,nMatrix);
     for(int i=0; i<nMatrix;i++)
     {
         GrB_mxv(v, GrB_NULL, GrB_NULL, GrB_PLUS_TIMES_SEMIRING_FP64, A, v, GrB_NULL);
@@ -234,135 +229,11 @@ else
 {
         std::cout<<"\nComputation went well";
 }
+    
+    
     GrB_Matrix_free(&A);
     GrB_Vector_free(&v);
     GrB_Vector_free(&result);
-
-    // Finalize GraphBLAS
     GrB_finalize();
 
-#if 0
-
-    //blockTest.print(std::cout);
-
-    int nbrMatrix = 1;
-    for(int i=0; i<nbrMatrix; i++)
-    {
-   
-        MatrixSymmetric test(size);
-        
-        setMatrixRandomValues(test);
-        //printMatrixValues(&test);
-        
-      
-        
-        for(int i=0; i<size;i++)
-        {
-            Y_true[i] = 0;//init
-        }
-        //clock_t start_1 = clock();
-        //Y_third =  multi(&test,Vec,blocksize,true);
-        
-        //clock_t end_1 = clock();
-        
-        //clock_t start_2 = clock();
-        test.vecMulAdd(Vec, Y_true);//calculate using boths techniques
-        //clock_t end_2 = clock();
-        
-        //clock_t start_3 = clock();
-        //test.vecMulAdd(Vec, Y_true);//calculate using boths techniques
-        //cblas_dsymv(CblasRowMajor, CblasLower, 4, 1.0, test.data(), size, Vec, 1, 1.0, Y_true, 1);
-        
-        //cblas_dsymv(CblasRowMajor, CblasLower, 4, 1.0, test.data(), size, Vec, 1, 1.0, Y_true, 1);
-        int t1 = std::time(NULL);
-        
-        test.vecMulPerBlock(Vec, Y_res, 4, 8);
-        std::cout<<"Matrix calculation performed time : "<< t1 - std::time(NULL);
-        //Y_res= multi(&test,Vec,blocksize,false);//calculate using both techniques
-        //clock_t end_3 = clock();
-        //const real* val = test.data();
-       // matrix_multiply_4x4_neonMain(Vec, Vec, Y_thidrd, Y_diff, 4, size, val);
-       //matrix_multiply_4x4_neonMain(Vec, Vec, Y_third, Y_diff, 4, size, val);
-      
-    }
-    
-
-
- 
-
-
-    std::cout<<"\n\nResult of block_computation\n";
-    for(int i=0; i<size;i++)
-    {
-        std::cout<<Y_res[i]<<" ";
-    }
-
-  
-
-    cout<<"\n\nResult of third_computation\n";
-    for(int i=0; i<size;i++)
-    {
-        cout<<Y_third[i]<<" ";
-    }
-    cout<<"\n\nDifference of true_computation with third\n";
-    for(int i=0; i<size;i++)
-    {
-        cout<<Y_dift[i]<<" ";
-    }
-
-    auto t_1 = 1000*(end_1 - start_1)/CLOCKS_PER_SEC;
-    auto t_2 = 1000*(end_2 - start_2)/CLOCKS_PER_SEC;
-    auto t_3 = 1000*(end_3 - start_3)/CLOCKS_PER_SEC;
-    std::cout<<"\n\nElapses times\nBlock Algorithm:"<<t_1<<"\nNative algorithm:"<<t_2<<"\n"<<"fullvecmut"<<t_3;
-    
-
-
-    using namespace std::chrono;
-    auto start = high_resolution_clock::now();
-    std::cout<<"Perf test for bothvecmul\n";
-    
-    real R1[4] = {1,2,3,4};
-    real R2[4] = {1,2,3,4};
-    real Y1[4] = {0,0,0,0};
-    real Y2[4] = {0,0,0,0};
-    int c1 =0;
-
-    real Y12[4] = {0,0,0,0};
-    real Y22[4] = {0,0,0,0};
-    
-    int c2 = 0;
-    Matrix44* blockTest = new Matrix44(1,1,3,4,5,6,7,8,9,1,2,12,13,14,15,16);
-  
-        
-    blockTest -> bothvecmulopti(R1, R2, Y12, Y22);
-    
-    blockTest-> bothvecmul(R1, R2, Y1, Y2);
-    
-    std::cout<<"Results:";
-    for(int i=0; i<4;i++)
-    {
-        std::cout<<Y1[i]<<" ";
-    }
-    std::cout<<" \n";
-    for(int i=0; i<4;i++)
-    {
-        std::cout<<Y2[i]<<" ";
-    }
-    std::cout<<" \n\n";
-    for(int i=0; i<4;i++)
-    {
-        std::cout<<Y12[i]<<" ";
-    }
-    std::cout<<" \n";
-    for(int i=0; i<4;i++)
-    {
-        std::cout<<Y22[i]<<" ";
-    }
-
-    std::cout<<"\nNumber executed for 1:"<<c1<<"\n";
-    std::cout<<"Number executed for 2:"<<c2<<"\n";
-
-    
-#endif
-    //ding of parallel region
 }

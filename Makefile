@@ -7,7 +7,7 @@ GraphBLAS = /Users/enzo/mylibs/SuiteSparse/GraphBLAS/Include/
 
 ACTUAL_DIR = /Users/enzo/matrixcalculation/MatrixCalculation
 EXEC = tests
-CXXFLAGS =  -Xclang  -std=c++11 -v  -fopenmp=libomp
+CXXFLAGS =  -Xclang  -std=c++11 -v  -fopenmp=libomp -Wall
 INCLUDES = -Iinclude/ \
 	-Ibin/boost_1_84_0/\
 	-I$(OPENBLAS_DIR)\
