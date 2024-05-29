@@ -313,9 +313,8 @@ public:
     /// debug function
     int bad() const;
     
-    void vecMulMt(int nbThreads, const real* X, real* Y);
+   
     void vecMulAddMt(int nbThreads, const real* X, real* Y);
-    void calculate(std::deque<Queue2*>** workingPhases2, int phase_number, const real*X, real*Y, int big_mat_size);
 
     void vecMulMt(int nbThreads, const real* X, real* Y, int nTime);
     void vecMulMt2(int nbThreads, const real* X, real* Y, int nTime);

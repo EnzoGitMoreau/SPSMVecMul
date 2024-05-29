@@ -7,16 +7,15 @@
 #include "sparmatsymblk.h"
 #include <random>
 #include "matrix.h"
-#include "blockMatrix.hpp"
 #include <time.h>
-#include "blockInstance.hpp"
 #include "omp.h"
 #include <deque> 
 #include <tuple>
 #include "real.h"
 #include "GraphBLAS.h"
 #include "cblas.h"
-
+#include <chrono>
+#include <fstream>
 #define NUMBER 1*2*3*4*5*6*7*2
 
 typedef std::tuple<int,int,int,Matrix44*> Tuple2;
@@ -117,8 +116,33 @@ int main(int argc, char* argv[])
 
     
     int blocksize = 4;
-    size_t size = blocksize * NUMBER;
-    size = 4*8*2*2*2*2*2;
+    int size;
+    int nb_threads;
+    if (argc < 3) {
+        std::cerr << "Usage: tests nb_threads matSize" << std::endl;
+        
+        return 1;
+        }
+        else
+    {
+        try
+        {
+            size = std::stoi(argv[2]);
+            nb_threads = std::stoi(argv[1]); 
+        }
+        catch(std::exception e)
+        {
+            std::cerr << "Usage: tests nb_threads matSize" << std::endl;
+            return 1;
+        }
+        if(size%(nb_threads*4)!= 0)
+        {
+            std::cerr << "Only supported matrice sizes that are a multiple of (nb_threads*4) " << std::endl;
+            return 1;
+        }
+
+    }
+   
     real* Vec = (real*)malloc(size * sizeof(real));//Defining vector to do MX
     real* Y_res = (real*)malloc(size * sizeof(real));//Y
     real* Y_true = (real*)malloc(size * sizeof(real));//Y_true to compare
@@ -129,7 +153,9 @@ int main(int argc, char* argv[])
     {
         Vec[i]=i;//Init
         Y_res[i] = 0;
+        Y_true[i] = 0;
     }
+    
 
 
 
@@ -143,18 +169,15 @@ int main(int argc, char* argv[])
     fillSMSB(5, size, 4, &testMatrix);
     //testMatrix.printSummary(std::cout, 0, 25);
     
-    
-    omp_set_num_threads(1);
+    omp_set_num_threads(nb_threads);
     
     GrB_init(GrB_BLOCKING);
 
     std::cout<<"OpenMP with" << omp_get_max_threads() <<"cores";
-    std::cout<<"GraphBlas started";
+    std::cout<<"GraphBlas startedtest";
     bool have_openmp ;
-   
     GrB_Matrix A;
     GrB_Matrix_new(&A, GrB_FP64, size, size); // n_rows and n_cols are the dimensions of your matrix
-  
     GrB_Vector v;
     GrB_Vector_new(&v, GrB_FP64, size);
     GrB_Index* I = (GrB_Index*) malloc(sizeof(GrB_Index)*size*size);
@@ -176,24 +199,47 @@ int main(int argc, char* argv[])
     std::cout<<GrB_Matrix_build_FP64(A,I,J,values,(GrB_Index)size*size,GxB_IGNORE_DUP);
     GrB_Vector result;
     GrB_Vector_new(&result, GrB_FP64, size);
-    
-    
     std::vector<double> result_values(size);
-    
-
-   
-    int nMatrix = 10000;
-    int nThreads = 8;
+    int nMatrix = 1;
+    int nThreads = 3;
     testMatrix.prepareForMultiply(1);
-    
-   
-    testMatrix.vecMulMt(nThreads, Vec, Y_res,nMatrix);
+    std::ofstream outfile1;
+    outfile1.open("res/standard.txt", std::ios::app);
+
+    //Cytosim implementationn
+    using milli = std::chrono::milliseconds;
+    auto start = std::chrono::high_resolution_clock::now();
+    for(int i=0; i<nMatrix;i++)
+    {
+        testMatrix.vecMulAdd(Vec, Y_true);
+    }
+    auto stop= std::chrono::high_resolution_clock::now();
+    outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<";";
+    outfile1.close();
+
+    testMatrix.prepareForMultiply(1);
+    std::ofstream outfile2;
+    outfile2.open("res/newImpl.txt", std::ios::app);
+    //  New implementation time
+    using milli = std::chrono::milliseconds;
+    start = std::chrono::high_resolution_clock::now();
+    testMatrix.vecMulMt(nb_threads, Vec, Y_res,nMatrix);
+    stop = std::chrono::high_resolution_clock::now();
+    outfile2 << std::chrono::duration_cast<milli>(stop - start).count()<<";";
+    outfile2.close();
+
+    std::ofstream outfile3;
+    outfile3.open("res/GraphBlas.txt", std::ios::app);
+    using milli = std::chrono::milliseconds;
+    start = std::chrono::high_resolution_clock::now();
     for(int i=0; i<nMatrix;i++)
     {
         GrB_mxv(v, GrB_NULL, GrB_NULL, GrB_PLUS_TIMES_SEMIRING_FP64, A, v, GrB_NULL);
         //GxB_Vector_fprint(v, NULL, GxB_COMPLETE,NULL);
     }
-
+    stop = std::chrono::high_resolution_clock::now();
+    outfile3 << std::chrono::duration_cast<milli>(stop - start).count()<<";";
+    outfile3.close();
     int nbDiff = 0;
     
     for(int i=0; i<size;i++)
@@ -203,8 +249,7 @@ int main(int argc, char* argv[])
         {
             nbDiff++;
         }
-        //Y_dift[i] = Y_true[i] - Y_third[i];
-        
+       
     }
 
 if(nbDiff !=0)

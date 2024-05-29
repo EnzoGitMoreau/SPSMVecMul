@@ -69,23 +69,24 @@ public:
         }
         else
         {
+            std::cout<<"\n";
             phase_number  = (nbThreads +1) / 2;
             for(int i =1; i<= (nbThreads - 1) /2; i++)
             {
-                phase_tab[i] = 1;
-                //std::cout << phase_tab[i] << " ";
+                phase_tab[i] = i;
+                std::cout << phase_tab[i] << " ";
             }
             for(int i=0; i< (nbThreads -1 )/ 2; i++)
             {
                 phase_tab[(nbThreads-1)/2 +i] = (nbThreads-1)/2 -i;
-                //std::cout << phase_tab[(nbThreads-1)/2  + i] << " ";
+                std::cout << phase_tab[(nbThreads-1)/2  + i] << " ";
             }
         }
         
         workingPhases = (real***) malloc(sizeof(real**)*phase_number);
         workingIndexes = (int***)malloc(sizeof(int**)*phase_number);
         
-        QueueN*** phasesTemp = (QueueN***) malloc(sizeof(QueueN**) * phase_number);
+        QueueBlock*** phasesTemp = (QueueBlock***) malloc(sizeof(QueueBlock**) * phase_number);
         int threadBlockSize = (int) matrix->size() / (S_BLOCK_SIZE * nbThreads);
         int* phase_counter = (int*) malloc(sizeof(int)*phase_number);
         work_lengths = (int**) malloc(sizeof(int*)*phase_number);
@@ -100,10 +101,10 @@ public:
             workingPhases[i] = (real**) malloc(sizeof(real*) * nbThreads);
             workingIndexes[i] = (int**) malloc(sizeof(int*) * nbThreads);
             
-            phasesTemp[i] = (QueueN**) malloc(sizeof(QueueN*)*nbThreads);
+            phasesTemp[i] = (QueueBlock**) malloc(sizeof(QueueBlock*)*nbThreads);
             for(int j=0; j<nbThreads; j++)
             {
-                phasesTemp[i][j] = new QueueN();
+                phasesTemp[i][j] = new QueueBlock();
             }
         }
         
@@ -139,7 +140,7 @@ public:
                         }
                     }
                     //phasesTemp[phase][phase_counter[phase]%nbThreads]->push_front(Tuple2( indice_ligne, indice_col,swap, &matrix->block(col->inx_[j],matrix->colidx_[i])));
-                    mytuplenew data;
+                    Block data;
                     Matrix44 matrix= col->blk_[j];
                     data.a0 = matrix.val[0x0];
                     data.a1 = matrix.val[0x1];
@@ -207,7 +208,7 @@ public:
                 {
                     
                    
-                    mytuplenew first= phasesTemp[i][j]->front();
+                    Block first= phasesTemp[i][j]->front();
                     phasesTemp[i][j]->pop_front();
                     
                     workingPhases[i][j][16*m] = first.a0;
@@ -239,42 +240,46 @@ public:
     }
     void generateBlocks()
     {
+        std::cout<<"\nGenerating blocks\n";
         phase_tab = (int*) malloc(sizeof(int)*nbThreads);
         phase_tab[0] = 0;
         if(nbThreads %2 == 0)
         {
+            std::cout<<"\n";
             phase_number = nbThreads /2 +1;
             for(int i =1; i<=nbThreads/2;i++)
             {
                 phase_tab[i] = i;
-                //std::cout << phase_tab[i] << " ";
+                std::cout << phase_tab[i] << " ";
             }
             for(int i=1 ; i<nbThreads/2;i++)
             {
                 phase_tab[nbThreads/2 + i] = nbThreads/2 - i;
-                //std::cout << phase_tab[nbThreads/2 + i] << " ";
+                std::cout << phase_tab[nbThreads/2 + i] << " ";
             }
         }
         else
         {
+       
             phase_number  = (nbThreads +1) / 2;
             for(int i =1; i<= (nbThreads - 1) /2; i++)
             {
-                phase_tab[i] = 1;
-                //std::cout << phase_tab[i] << " ";
+                phase_tab[i] = i;
+
+               
             }
             for(int i=0; i< (nbThreads -1 )/ 2; i++)
             {
-                phase_tab[(nbThreads-1)/2 +i] = (nbThreads-1)/2 -i;
-                //std::cout << phase_tab[(nbThreads-1)/2  + i] << " ";
+                phase_tab[(nbThreads+1)/2 +i] = (nbThreads-1)/2 -i;
+               
             }
         }
         
         workingPhases = (real***) malloc(sizeof(real**)*phase_number);
         workingIndexes7 = (unsigned short***)malloc(sizeof(unsigned short**)*phase_number);
         firstBlocks = (int**)malloc(sizeof(int*)*phase_number);
-        QueueN*** phasesTemp = (QueueN***) malloc(sizeof(QueueN**) * phase_number);
-        QueueN*** phasesTempSwap = (QueueN***) malloc(sizeof(QueueN**) * phase_number);
+        QueueBlock*** phasesTemp = (QueueBlock***) malloc(sizeof(QueueBlock**) * phase_number);
+        QueueBlock*** phasesTempSwap = (QueueBlock***) malloc(sizeof(QueueBlock**) * phase_number);
         int threadBlockSize = (int) matrix->size() / (S_BLOCK_SIZE * nbThreads);
         int* phase_counter = (int*) malloc(sizeof(int)*phase_number);
         work_lengths = (int**) malloc(sizeof(int*)*phase_number);
@@ -289,12 +294,12 @@ public:
             workingPhases[i] = (real**) malloc(sizeof(real*) * nbThreads);
             workingIndexes7[i] = (unsigned short**) malloc(sizeof(unsigned short*) * nbThreads);
             firstBlocks[i] = (int*)malloc(sizeof(int)*nbThreads);
-            phasesTemp[i] = (QueueN**) malloc(sizeof(QueueN*)*nbThreads);
-            phasesTempSwap[i] = (QueueN**) malloc(sizeof(QueueN*)*nbThreads);
+            phasesTemp[i] = (QueueBlock**) malloc(sizeof(QueueBlock*)*nbThreads);
+            phasesTempSwap[i] = (QueueBlock**) malloc(sizeof(QueueBlock*)*nbThreads);
             for(int j=0; j<nbThreads; j++)
             {
-                phasesTemp[i][j] = new QueueN();
-                phasesTempSwap[i][j] = new QueueN();
+                phasesTemp[i][j] = new QueueBlock();
+                phasesTempSwap[i][j] = new QueueBlock();
             }
         }
         
@@ -330,7 +335,7 @@ public:
                         }
                     }
                     //phasesTemp[phase][phase_counter[phase]%nbThreads]->push_front(Tuple2( indice_ligne, indice_col,swap, &matrix->block(col->inx_[j],matrix->colidx_[i])));
-                    mytuplenew data;
+                    Block data;
                     Matrix44 matrix= col->blk_[j];
                     data.a0 = matrix.val[0x0];
                     data.a1 = matrix.val[0x1];
@@ -385,7 +390,7 @@ public:
         int relevantSize = (int) matrix->size() / nbThreads;
         for(int i=0; i<phase_number; i++)//Putting in order for threads
         {
-            std::cout<<"New phase";
+            
             for(int j=0; j<nbThreads;j++)
             {
                 
@@ -413,7 +418,7 @@ public:
                 {
                     
                    
-                    mytuplenew first= phasesTemp[i][j]->back();
+                    Block first= phasesTemp[i][j]->back();
                     phasesTemp[i][j]->pop_back();
                     
                     workingPhases[i][j][16*m] = first.a0;

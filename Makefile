@@ -20,7 +20,6 @@ LIB_DIRS = -L$(OPENBLAS_DIR) -Lbin/boost_1_84_0/stage/lib -L/usr/local/lib -L$(O
 LIBS = -lboost_thread -lopenblas_vortexp-r0.3.27 -lgraphblas
 SRCS = $(SRC_PATH)/main.cpp \
  $(SRC_PATH)/sparmatsymblk.cc \
- $(SRC_PATH)/blockInstance.cpp \
  $(SRC_PATH)/MatSymBMtInstance.cpp \
  $(SRC_PATH)/matsym.cc
 
@@ -29,6 +28,7 @@ OBJS := $(OBJS:.cc=.o)
 TARGET = $(EXEC)
 
 all:
+	echo $(OBJS)
 	$(MAKE) clean
 	$(MAKE) compile
 	$(MAKE) install
