@@ -74,6 +74,12 @@
 		"variant": "cpp",
 		"vector": "cpp",
 		"algorithm": "cpp",
-		"*.ipp": "cpp"
+		"*.ipp": "cpp",
+		"__debug": "cpp",
+		"atomic": "cpp",
+		"exception": "cpp",
+		"system_error": "cpp",
+		"memory": "cpp",
+		"print": "cpp"
 	}
 }

@@ -187,6 +187,8 @@ int main(int argc, char* argv[])
         {
             size = std::stoi(argv[2]);
             nb_threads = std::stoi(argv[1]); 
+
+            
             nMatrix = std::stoi(argv[3]);
         }
         catch(std::exception e)
@@ -196,8 +198,8 @@ int main(int argc, char* argv[])
         }
         if(size%(nb_threads*4)!= 0)
         {
-            std::cerr << "Only supported matrice sizes that are a multiple of (nb_threads*4) " << std::endl;
-            return 1;
+            size = (int)(size / nb_threads) *nb_threads;
+           
         }
         if(argc >=5)
         {
@@ -243,18 +245,20 @@ int main(int argc, char* argv[])
 
     std::cout<<"\n[STARTUP] OpenMP is enabled with " << omp_get_max_threads() <<" threads\n";
     std::cout<<"[STARTUP] ARM PL is working\n";
-    
+    std::ofstream outfile1;
+    outfile1.open("res/armpl.csv", std::ios::app);
     std::cout<<"[INFO] Starting ARMPL matrix-vector multiplications\n";
     auto start = std::chrono::high_resolution_clock::now();
-    y_arm = amd_matrix_vecmul(size, nMatrix, pairs);
+    //y_arm = amd_matrix_vecmul(size, nMatrix, pairs);
     auto stop= std::chrono::high_resolution_clock::now();
     std::cout<<"[INFO] ARMPL multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
-    
+    //outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
+    outfile1.close();
 
     std::cout<<"[INFO] Starting Cytosim matrix-vector multiplications\n";
     
-    std::ofstream outfile1;
-    outfile1.open("res/standard.txt", std::ios::app);
+   
+    outfile1.open("res/standard.csv", std::ios::app);
     start = std::chrono::high_resolution_clock::now();
     for(int i=0; i<nMatrix;i++)
     {
@@ -262,19 +266,20 @@ int main(int argc, char* argv[])
     }
     
     stop= std::chrono::high_resolution_clock::now();
-    outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<";";
+    
+    outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
     outfile1.close();
     std::cout<<"[INFO] Cytosim multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
 
     
     std::ofstream outfile2;
-    outfile2.open("res/newImpl.txt", std::ios::app);
+    outfile2.open("res/newImpl.csv", std::ios::app);
     std::cout<<"[INFO] Starting new-impl matrix-vector multiplications\n";
     using milli = std::chrono::milliseconds;
     start = std::chrono::high_resolution_clock::now();
     testMatrix.vecMulMt2(nb_threads, Vec, Y_res,nMatrix);
     stop = std::chrono::high_resolution_clock::now();
-    outfile2 << std::chrono::duration_cast<milli>(stop - start).count()<<";";
+    outfile2 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
     outfile2.close();
     std::cout<<"[INFO] new-impl multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms";
 

@@ -71,14 +71,58 @@ public:
         {
           
             phase_number  = (nbThreads +1) / 2;
-            for(int i =1; i<= (nbThreads - 1) /2; i++)
+            if(nbThreads == 3)
             {
-                phase_tab[i] = i;
-     
+                phase_tab[0] = 0;
+                phase_tab[1] = 1;
+                phase_tab[2] = 1;
             }
-            for(int i=0; i< (nbThreads -1 )/ 2; i++)
+            if(nbThreads == 5)
             {
-                phase_tab[(nbThreads-1)/2 +i] = (nbThreads-1)/2 -i;
+                phase_tab[0] = 0;
+                phase_tab[1] = 1;
+                phase_tab[2] = 2;
+                phase_tab[3] = 2;
+                phase_tab[4] = 1;
+
+            }
+            if(nbThreads == 7)
+            {
+                phase_tab[0] = 0;
+                phase_tab[1] = 1;
+                phase_tab[2] = 2;
+                phase_tab[3] = 3;
+                phase_tab[4] = 3;
+                phase_tab[5] = 2;
+                phase_tab[6] = 1;
+
+            }
+             if(nbThreads == 9)
+            {
+                phase_tab[0] = 0;
+                phase_tab[1] = 1;
+                phase_tab[2] = 2;
+                phase_tab[3] = 3;
+                phase_tab[4] = 4;
+                phase_tab[5] = 4;
+                phase_tab[6] = 3;
+                phase_tab[7] = 2;
+                phase_tab[8] = 1;
+
+            }
+             if(nbThreads == 11)
+            {
+                phase_tab[0] = 0;
+                phase_tab[1] = 1;
+                phase_tab[2] = 2;
+                phase_tab[3] = 3;
+                phase_tab[4] = 4;
+                phase_tab[5] = 5;
+                phase_tab[6] = 5;
+                phase_tab[7] = 4;
+                phase_tab[8] = 3;
+                phase_tab[9] = 2;
+                phase_tab[10] = 1;
 
             }
         }
