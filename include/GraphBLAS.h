@@ -116,7 +116,7 @@
 
 // With C11 and later, _Generic keyword and polymorphic functions can be
 // used.  Earlier versions of the language do not have this feature.
-
+#define __STDC_VERSION__  201710L
 #ifdef __STDC_VERSION__
 // C17: 201710L
 // C11: 201112L

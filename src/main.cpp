@@ -9,14 +9,19 @@
 #include "matrix.h"
 #include <time.h>
 #include "omp.h"
+#include "armpl.h"
 #include <deque> 
 #include <tuple>
 #include "real.h"
-#include "GraphBLAS.h"
-#include "cblas.h"
+
+
 #include <chrono>
 #include <fstream>
 #define NUMBER 1*2*3*4*5*6*7*2
+
+
+#include "custom_alg.h"
+
 
 typedef std::tuple<int,int,int,Matrix44*> Tuple2;
 typedef std::deque<Tuple2> Queue2;
@@ -96,7 +101,57 @@ void setMatrixRandomValues(MatrixSymmetric matrix)
     
 }
 
+double* amd_matrix_vecmul(int size, int nTests, std::vector<std::pair<int, int>> pairs)
+{
+    double* values = (double*) malloc(sizeof(double)*size*size);
+    add_block_to_pos(values,pairs,size);
+    
+    
+    armpl_spmat_t armpl_mat;
+    armpl_int_t creation_flags = 0;
+    armpl_status_t info = armpl_spmat_create_dense_d(&armpl_mat,ARMPL_COL_MAJOR,size, size, size, values,creation_flags);
+    if (info!=ARMPL_STATUS_SUCCESS)
+          printf("ERROR: armpl_spmat_create_csr_d returned %d\n", info);
 
+    /* 3a. Supply any pertinent information that is known about the matrix */
+    info = armpl_spmat_hint(armpl_mat, ARMPL_SPARSE_HINT_STRUCTURE,
+                          ARMPL_SPARSE_STRUCTURE_UNSTRUCTURED);
+    if (info!=ARMPL_STATUS_SUCCESS)
+          printf("ERROR: armpl_spmat_hint returned %d\n", info);
+
+    /* 3b. Supply any hints that are about the SpMV calculations
+         to be performed */
+    info = armpl_spmat_hint(armpl_mat, ARMPL_SPARSE_HINT_SPMV_OPERATION,
+                          ARMPL_SPARSE_OPERATION_NOTRANS);
+    if (info!=ARMPL_STATUS_SUCCESS)
+          printf("ERROR: armpl_spmat_hint returned %d\n", info);
+
+    info = armpl_spmat_hint(armpl_mat, ARMPL_SPARSE_HINT_SPMV_INVOCATIONS,
+                          ARMPL_SPARSE_INVOCATIONS_MANY);
+    if (info!=ARMPL_STATUS_SUCCESS)
+          printf("ERROR: armpl_spmat_hint returned %d\n", info);
+
+    /* 4. Call an optimization process that will learn from the hints you
+        have previously supplied */
+    info = armpl_spmv_optimize(armpl_mat);
+    if (info!=ARMPL_STATUS_SUCCESS)
+          printf("ERROR: armpl_spmv_optimize returned %d\n", info);
+    double *x = (double *)malloc(size*sizeof(double));
+    for (int i=0; i<size; i++) {
+            x[i] = i;
+    }
+    double *y = (double *)malloc(size*sizeof(double));
+    for (int i=0; i<nTests; i++) {
+            info = armpl_spmv_exec_d(ARMPL_SPARSE_OPERATION_NOTRANS, 1.0,
+                             armpl_mat, x, 1.0, y);
+            if (info!=ARMPL_STATUS_SUCCESS)
+            printf("ERROR: armpl_spmv_exec_d returned %d\n", info);
+    }
+
+   
+    armpl_spmat_destroy(armpl_mat);
+    return y;
+}
 void fillSMSB(int nbBlocks, int matsize,int blocksize, SparMatSymBlk* matrix)
 {
     
@@ -111,14 +166,17 @@ void fillSMSB(int nbBlocks, int matsize,int blocksize, SparMatSymBlk* matrix)
     }
 }
 
+
 int main(int argc, char* argv[])
 {
 
-    
+    using milli = std::chrono::milliseconds;
     int blocksize = 4;
     int size;
     int nb_threads;
-    if (argc < 3) {
+    int nMatrix = 1;
+    double block_percentage = 0.10;
+    if (argc < 4) {
         std::cerr << "Usage: tests nb_threads matSize" << std::endl;
         
         return 1;
@@ -129,10 +187,11 @@ int main(int argc, char* argv[])
         {
             size = std::stoi(argv[2]);
             nb_threads = std::stoi(argv[1]); 
+            nMatrix = std::stoi(argv[3]);
         }
         catch(std::exception e)
         {
-            std::cerr << "Usage: tests nb_threads matSize" << std::endl;
+            std::cerr << "Usage: tests nb_threads matSize nMatrix [block_percentage]" << std::endl;
             return 1;
         }
         if(size%(nb_threads*4)!= 0)
@@ -140,15 +199,25 @@ int main(int argc, char* argv[])
             std::cerr << "Only supported matrice sizes that are a multiple of (nb_threads*4) " << std::endl;
             return 1;
         }
-
+        if(argc >=5)
+        {
+        try
+        {
+            block_percentage = std::stod(argv[4]);
+        }
+        catch(std::exception e)
+        {
+            std::cerr << "block percentage not recognized as a double: usage x.f";
+            return 1;
+        }
+        }
     }
    
     real* Vec = (real*)malloc(size * sizeof(real));//Defining vector to do MX
     real* Y_res = (real*)malloc(size * sizeof(real));//Y
     real* Y_true = (real*)malloc(size * sizeof(real));//Y_true to compare
-    real* Y_third = (real*)malloc(size * sizeof(real));//Y_true to compare
+    real* y_arm = (real*)malloc(size * sizeof(real));//Y_true to compare
     real* Y_dif = (real*)malloc(size * sizeof(real));//Y_diff that will store differences
-    real* Y_diff = (real*)malloc(size * sizeof(real));//Y_diff that will store differences
     for(int i=0; i<size;i++)
     {
         Vec[i]=i;//Init
@@ -157,94 +226,72 @@ int main(int argc, char* argv[])
     }
     
 
-
-
-  
+    
+    //Selecting blocks
+    std::vector<std::pair<int, int>> pairs = select_random_points(size/4,(int) size*size/16 * block_percentage);
+    //Init SPSM
     SparMatSymBlk testMatrix = SparMatSymBlk();
     testMatrix.allocate(size);
     testMatrix.resize(size);
     testMatrix.reset();
-    
-    //testMatrix.element(1,2) += bl ockTest.value(1,2);
-    fillSMSB(5, size, 4, &testMatrix);
-    //testMatrix.printSummary(std::cout, 0, 25);
+    add_block_to_pos_std(&testMatrix, pairs, size);
+    testMatrix.prepareForMultiply(1);
+    //End of SPSM Init
+    std::cout<<"Constructed matrix of size "<<size<<" with "<<(int) size*size/16 * block_percentage <<" blocks of size 4, preparing to do "<<nMatrix<<" multiplications";
     
     omp_set_num_threads(nb_threads);
+
+    std::cout<<"\n[STARTUP] OpenMP is enabled with " << omp_get_max_threads() <<" threads\n";
+    std::cout<<"[STARTUP] ARM PL is working\n";
     
-    GrB_init(GrB_BLOCKING);
+    std::cout<<"[INFO] Starting ARMPL matrix-vector multiplications\n";
+    auto start = std::chrono::high_resolution_clock::now();
+    y_arm = amd_matrix_vecmul(size, nMatrix, pairs);
+    auto stop= std::chrono::high_resolution_clock::now();
+    std::cout<<"[INFO] ARMPL multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
+    
 
-    std::cout<<"OpenMP with" << omp_get_max_threads() <<"cores";
-    std::cout<<"GraphBlas startedtest";
-    bool have_openmp ;
-    GrB_Matrix A;
-    GrB_Matrix_new(&A, GrB_FP64, size, size); // n_rows and n_cols are the dimensions of your matrix
-    GrB_Vector v;
-    GrB_Vector_new(&v, GrB_FP64, size);
-    GrB_Index* I = (GrB_Index*) malloc(sizeof(GrB_Index)*size*size);
-    GrB_Index* J = (GrB_Index*) malloc(sizeof(GrB_Index)*size*size);
-    double* values = (double*) malloc(sizeof(GrB_Index)*size*size);
-    for(int i=0;i<size;i++)
-    {
-        
-        GrB_Vector_setElement_FP64(v, (double)(i*size)/4, (GrB_Index) i);
-        for(int j=0; j<size;j++)
-        {
-            I[i*size +j] = i;
-            J[i*size +j] = j;
-            values[i*size+j] = (i+j*size)/4;
-            
-        }
-
-    }
-    std::cout<<GrB_Matrix_build_FP64(A,I,J,values,(GrB_Index)size*size,GxB_IGNORE_DUP);
-    GrB_Vector result;
-    GrB_Vector_new(&result, GrB_FP64, size);
-    std::vector<double> result_values(size);
-    int nMatrix = 1;
-    int nThreads = 3;
-    testMatrix.prepareForMultiply(1);
+    std::cout<<"[INFO] Starting Cytosim matrix-vector multiplications\n";
+    
     std::ofstream outfile1;
     outfile1.open("res/standard.txt", std::ios::app);
-
-    //Cytosim implementationn
-    using milli = std::chrono::milliseconds;
-    auto start = std::chrono::high_resolution_clock::now();
+    start = std::chrono::high_resolution_clock::now();
     for(int i=0; i<nMatrix;i++)
     {
         testMatrix.vecMulAdd(Vec, Y_true);
     }
-    auto stop= std::chrono::high_resolution_clock::now();
+    
+    stop= std::chrono::high_resolution_clock::now();
     outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<";";
     outfile1.close();
+    std::cout<<"[INFO] Cytosim multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
 
-    testMatrix.prepareForMultiply(1);
+    
     std::ofstream outfile2;
     outfile2.open("res/newImpl.txt", std::ios::app);
-    //  New implementation time
+    std::cout<<"[INFO] Starting new-impl matrix-vector multiplications\n";
     using milli = std::chrono::milliseconds;
     start = std::chrono::high_resolution_clock::now();
-    testMatrix.vecMulMt(nb_threads, Vec, Y_res,nMatrix);
+    testMatrix.vecMulMt2(nb_threads, Vec, Y_res,nMatrix);
     stop = std::chrono::high_resolution_clock::now();
     outfile2 << std::chrono::duration_cast<milli>(stop - start).count()<<";";
     outfile2.close();
+    std::cout<<"[INFO] new-impl multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms";
 
-    std::ofstream outfile3;
-    outfile3.open("res/GraphBlas.txt", std::ios::app);
-    using milli = std::chrono::milliseconds;
-    start = std::chrono::high_resolution_clock::now();
-    for(int i=0; i<nMatrix;i++)
-    {
-        GrB_mxv(v, GrB_NULL, GrB_NULL, GrB_PLUS_TIMES_SEMIRING_FP64, A, v, GrB_NULL);
-        //GxB_Vector_fprint(v, NULL, GxB_COMPLETE,NULL);
-    }
-    stop = std::chrono::high_resolution_clock::now();
-    outfile3 << std::chrono::duration_cast<milli>(stop - start).count()<<";";
-    outfile3.close();
+    
+    
+   
+
+
+    //Arm sparse linear algebra lib
+     
+
+
     int nbDiff = 0;
     
     for(int i=0; i<size;i++)
     {
-        Y_dif[i] = Y_true[i] - Y_res[i];
+        Y_dif[i] = Y_res[i] - Y_true[i];
         if(Y_dif[i]!=0)
         {
             nbDiff++;
@@ -276,9 +323,5 @@ else
 }
     
     
-    GrB_Matrix_free(&A);
-    GrB_Vector_free(&v);
-    GrB_Vector_free(&result);
-    GrB_finalize();
-
+ 
 }

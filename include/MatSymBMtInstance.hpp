@@ -69,17 +69,17 @@ public:
         }
         else
         {
-            std::cout<<"\n";
+          
             phase_number  = (nbThreads +1) / 2;
             for(int i =1; i<= (nbThreads - 1) /2; i++)
             {
                 phase_tab[i] = i;
-                std::cout << phase_tab[i] << " ";
+     
             }
             for(int i=0; i< (nbThreads -1 )/ 2; i++)
             {
                 phase_tab[(nbThreads-1)/2 +i] = (nbThreads-1)/2 -i;
-                std::cout << phase_tab[(nbThreads-1)/2  + i] << " ";
+
             }
         }
         
@@ -240,22 +240,21 @@ public:
     }
     void generateBlocks()
     {
-        std::cout<<"\nGenerating blocks\n";
         phase_tab = (int*) malloc(sizeof(int)*nbThreads);
         phase_tab[0] = 0;
         if(nbThreads %2 == 0)
         {
-            std::cout<<"\n";
+
             phase_number = nbThreads /2 +1;
             for(int i =1; i<=nbThreads/2;i++)
             {
                 phase_tab[i] = i;
-                std::cout << phase_tab[i] << " ";
+            
             }
             for(int i=1 ; i<nbThreads/2;i++)
             {
                 phase_tab[nbThreads/2 + i] = nbThreads/2 - i;
-                std::cout << phase_tab[nbThreads/2 + i] << " ";
+              
             }
         }
         else
@@ -1082,7 +1081,6 @@ public:
                 threads[i] = boost::thread(boost::bind(&MatSymBMtInstance::work, this,boost::ref(bar),boost::ref(bar2), n_time));;
             }
             
-            std::cout<<"Thread started\n";
             
             
            
@@ -1128,7 +1126,6 @@ public:
                 threads[i] = boost::thread(boost::bind(&MatSymBMtInstance::work2, this,boost::ref(bar),boost::ref(bar2), n_time));;
             }
             
-            std::cout<<"Thread started\n";
             
             
            
