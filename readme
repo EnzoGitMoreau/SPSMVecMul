@@ -1,5 +1,10 @@
 #How to use:
 
+#0- Download dependencies
+C++/C Compiler that works with openmp:llvm clang, gcc 
+ARM Performance Library: https://developer.arm.com/downloads/-/arm-performance-libraries
+OPENBLAS: https://www.openblas.net
+
 #1- Configure MAKEFILE
 Add CLANG, OPENMP, and OPENBLAS directories at the top of the Makefile
 
