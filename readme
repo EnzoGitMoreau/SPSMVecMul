@@ -1,0 +1,17 @@
+#How to use:
+
+#1- Configure MAKEFILE
+Add CLANG, OPENMP, and OPENBLAS directories at the top of the Makefile
+
+Compile with:
+	- make -> compile ./tests executable
+	- profile -> compile ./tests executable to be profiled
+
+#2- Start a test 
+- ./tests nbThreads Matrixsize nbOfMultiplication %blocks 
+%blocks represent the proportion of blocks inside the SparMat
+
+Time results are stored in res/
+
+#3- Launch multiple tests 
+Use test.Launcher.sh to launch multiple tests 
