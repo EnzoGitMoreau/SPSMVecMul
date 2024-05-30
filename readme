@@ -20,3 +20,6 @@ Time results are stored in res/
 
 #3- Launch multiple tests 
 Use test.Launcher.sh to launch multiple tests 
+
+
+#4- optional: create graphes using jupyter notebook in results/graphmake.ipynb
