@@ -249,10 +249,10 @@ int main(int argc, char* argv[])
     outfile1.open("res/armpl.csv", std::ios::app);
     std::cout<<"[INFO] Starting ARMPL matrix-vector multiplications\n";
     auto start = std::chrono::high_resolution_clock::now();
-    //y_arm = amd_matrix_vecmul(size, nMatrix, pairs);
+    y_arm = amd_matrix_vecmul(size, nMatrix, pairs);
     auto stop= std::chrono::high_resolution_clock::now();
     std::cout<<"[INFO] ARMPL multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
-    //outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
+    outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
     outfile1.close();
 
     std::cout<<"[INFO] Starting Cytosim matrix-vector multiplications\n";
