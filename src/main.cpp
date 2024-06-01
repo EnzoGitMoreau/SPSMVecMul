@@ -173,11 +173,11 @@ int main(int argc, char* argv[])
     using milli = std::chrono::milliseconds;
     int size = 0;
     int nb_threads = 1;
-    int nMatrix = 1;
+    int nRepeat = 1;
     int nBlocks = 0;
     
     if (argc < 4) {
-        std::cerr << "Usage: tests nb_threads matSize nMatrix" << std::endl;
+        std::cerr << "Usage: tests nb_threads matSize nRepeat" << std::endl;
         return 1;
     }
     else
@@ -186,11 +186,11 @@ int main(int argc, char* argv[])
         {
             nb_threads = std::stoi(argv[1]);
             size = std::stoi(argv[2]);
-            nMatrix = std::stoi(argv[3]);
+            nRepeat = std::stoi(argv[3]);
         }
         catch(std::exception e)
         {
-            std::cerr << "Usage: tests nb_threads matSize nMatrix [block_percentage]" << std::endl;
+            std::cerr << "Usage: tests nb_threads matSize nRepeat [block_percentage]" << std::endl;
             return 1;
         }
         if(size%(nb_threads*4)!= 0)
@@ -236,7 +236,7 @@ int main(int argc, char* argv[])
     add_block_to_pos_std(&testMatrix, pairs, size);
     testMatrix.prepareForMultiply(1);
     //End of SPSM Init
-    std::cout<<"Constructed matrix of size "<<size<<" with "<< nBlocks <<" blocks of size 4, preparing to do "<<nMatrix<<" multiplications";
+    std::cout<<"Constructed matrix of size "<<size<<" with "<< nBlocks <<" blocks of size 4, preparing to do "<<nRepeat<<" multiplications";
     
     omp_set_num_threads(nb_threads);
 
@@ -244,40 +244,38 @@ int main(int argc, char* argv[])
     std::cout<<"[STARTUP] ARM PL is working\n";
     std::ofstream outfile1;
     outfile1.open("res/armpl.csv", std::ios::app);
-    std::cout<<"[INFO] Starting ARMPL matrix-vector multiplications\n";
+    std::cout<<"[INFO] ARMPL... ";
     auto start = std::chrono::high_resolution_clock::now();
-    //y_arm = amd_matrix_vecmul(size, nMatrix, pairs);
+    //y_arm = amd_matrix_vecmul(size, nRepeat, pairs);
     auto stop= std::chrono::high_resolution_clock::now();
-    std::cout<<"[INFO] ARMPL multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
+    std::cout<<"   "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
     //outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
     outfile1.close();
 
-    std::cout<<"[INFO] Starting Cytosim matrix-vector multiplications\n";
-    
-   
+    std::cout<<"[INFO] " << testMatrix.what() << " ";
+
     outfile1.open("res/standard.csv", std::ios::app);
     start = std::chrono::high_resolution_clock::now();
-    for(int i=0; i<nMatrix;i++)
+    for(int i=0; i<nRepeat;i++)
     {
         testMatrix.vecMulAdd(Vec, Y_true);
     }
-    
     stop= std::chrono::high_resolution_clock::now();
     
     outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
     outfile1.close();
-    std::cout<<"[INFO] Cytosim multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
+    std::cout<<" "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
 
     
     std::ofstream outfile2;
     outfile2.open("res/newImpl.csv", std::ios::app);
-    std::cout<<"[INFO] Starting new-impl matrix-vector multiplications\n";
+    std::cout<<"[INFO] MULTI...";
     start = std::chrono::high_resolution_clock::now();
-    testMatrix.vecMulMt2(nb_threads, Vec, Y_res,nMatrix);
+    testMatrix.vecMulMt2(nb_threads, Vec, Y_res,nRepeat);
     stop = std::chrono::high_resolution_clock::now();
     outfile2 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
     outfile2.close();
-    std::cout<<"[INFO] new-impl multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms";
+    std::cout<<"   "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms";
 
     
     
