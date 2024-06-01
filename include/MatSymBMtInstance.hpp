@@ -15,8 +15,11 @@
 #include "boost/thread.hpp"
 #include <boost/thread/barrier.hpp>
 
+
 class MatSymBMtInstance final
 {
+    const static int BLOCKSIZE = 4;
+
 private:
     int phase_number;
     int* phase_tab;
@@ -24,22 +27,23 @@ private:
     boost::mutex _mutex;
     int big_mat_size;
     real* Y1;
-    int blocksize = 4;
     real* Y2;
     const real* X;
     SparMatSymBlk* matrix;
-    int thNb =0;
+    int thNb = 0;
     real*** workingPhases;
     int*** workingIndexes;
     int** firstBlocks;
     unsigned short*** workingIndexes7;
     int** work_lengths;
+    
 public:
-    MatSymBMtInstance(SparMatSymBlk* matrix, int nbThreadsE)
+    
+    MatSymBMtInstance(SparMatSymBlk* mat, int nbThreadsE)
     {
         nbThreads = nbThreadsE;
-        this->matrix = matrix;
-        big_mat_size = matrix->size();
+        this->matrix = mat;
+        big_mat_size = mat->size();
         real* big_Y = (real*) malloc(big_mat_size*2*sizeof(real));
         Y1 = big_Y;
         Y2 = big_Y + big_mat_size;
@@ -49,6 +53,17 @@ public:
             Y2[i] = 0;
         }
     }
+    
+    /// set phase_tab, which is ???
+    void setPhaseTabs(int nbt)
+    {
+        for ( int i = 0; i <= nbt/2; ++i )
+        {
+            phase_tab[nbt-i] = i;
+            phase_tab[i] = i;
+        }
+    }
+    
     void generateBlocks2()
     {
         phase_tab = (int*) malloc(sizeof(int)*nbThreads);
@@ -185,26 +200,26 @@ public:
                     }
                     //phasesTemp[phase][phase_counter[phase]%nbThreads]->push_front(Tuple2( indice_ligne, indice_col,swap, &matrix->block(col->inx_[j],matrix->colidx_[i])));
                     Block data;
-                    Matrix44 matrix= col->blk_[j];
-                    data.a0 = matrix.val[0x0];
-                    data.a1 = matrix.val[0x1];
-                    data.a2 = matrix.val[0x2];
-                    data.a3 = matrix.val[0x3];
-                    data.a4 = matrix.val[0x4];
-                    data.a5 = matrix.val[0x5];
-                    data.a6 = matrix.val[0x6];
-                    data.a7 = matrix.val[0x7];
-                    data.a8 = matrix.val[0x8];
-                    data.a9 = matrix.val[0x9];
-                    data.aA = matrix.val[0xA];
-                    data.aB = matrix.val[0xB];
-                    data.aC = matrix.val[0xC];
-                    data.aD = matrix.val[0xD];
-                    data.aE = matrix.val[0xE];
-                    data.aF = matrix.val[0xF];
+                    Matrix44 mat= col->blk_[j];
+                    data.a0 = mat.val[0x0];
+                    data.a1 = mat.val[0x1];
+                    data.a2 = mat.val[0x2];
+                    data.a3 = mat.val[0x3];
+                    data.a4 = mat.val[0x4];
+                    data.a5 = mat.val[0x5];
+                    data.a6 = mat.val[0x6];
+                    data.a7 = mat.val[0x7];
+                    data.a8 = mat.val[0x8];
+                    data.a9 = mat.val[0x9];
+                    data.aA = mat.val[0xA];
+                    data.aB = mat.val[0xB];
+                    data.aC = mat.val[0xC];
+                    data.aD = mat.val[0xD];
+                    data.aE = mat.val[0xE];
+                    data.aF = mat.val[0xF];
                     
-                    data.index_x = indice_ligne * blocksize;
-                    data.index_y = indice_col * blocksize;
+                    data.index_x = indice_ligne * BLOCKSIZE;
+                    data.index_y = indice_col * BLOCKSIZE;
                     
                     if(swap==0)
                     {
@@ -282,6 +297,8 @@ public:
             }
         }
     }
+    
+    
     void generateBlocks()
     {
         phase_tab = (int*) malloc(sizeof(int)*nbThreads);
@@ -379,26 +396,26 @@ public:
                     }
                     //phasesTemp[phase][phase_counter[phase]%nbThreads]->push_front(Tuple2( indice_ligne, indice_col,swap, &matrix->block(col->inx_[j],matrix->colidx_[i])));
                     Block data;
-                    Matrix44 matrix= col->blk_[j];
-                    data.a0 = matrix.val[0x0];
-                    data.a1 = matrix.val[0x1];
-                    data.a2 = matrix.val[0x2];
-                    data.a3 = matrix.val[0x3];
-                    data.a4 = matrix.val[0x4];
-                    data.a5 = matrix.val[0x5];
-                    data.a6 = matrix.val[0x6];
-                    data.a7 = matrix.val[0x7];
-                    data.a8 = matrix.val[0x8];
-                    data.a9 = matrix.val[0x9];
-                    data.aA = matrix.val[0xA];
-                    data.aB = matrix.val[0xB];
-                    data.aC = matrix.val[0xC];
-                    data.aD = matrix.val[0xD];
-                    data.aE = matrix.val[0xE];
-                    data.aF = matrix.val[0xF];
+                    Matrix44 mat= col->blk_[j];
+                    data.a0 = mat.val[0x0];
+                    data.a1 = mat.val[0x1];
+                    data.a2 = mat.val[0x2];
+                    data.a3 = mat.val[0x3];
+                    data.a4 = mat.val[0x4];
+                    data.a5 = mat.val[0x5];
+                    data.a6 = mat.val[0x6];
+                    data.a7 = mat.val[0x7];
+                    data.a8 = mat.val[0x8];
+                    data.a9 = mat.val[0x9];
+                    data.aA = mat.val[0xA];
+                    data.aB = mat.val[0xB];
+                    data.aC = mat.val[0xC];
+                    data.aD = mat.val[0xD];
+                    data.aE = mat.val[0xE];
+                    data.aF = mat.val[0xF];
                     
-                    data.index_x = indice_ligne * blocksize;
-                    data.index_y = indice_col * blocksize;
+                    data.index_x = indice_ligne * BLOCKSIZE;
+                    data.index_y = indice_col * BLOCKSIZE;
                     
                     if(swap==0)
                     {
@@ -449,9 +466,9 @@ public:
                 
                 //threadBlockSize
                 
-                //xi + yi*(thread_blocksize * blocksize) = ni
-                //xi = ni%(thead_blocksize * blocksize)
-                //yi = ni/(thread_blocksize * blocksize)
+                //xi + yi*(thread_blocksize * BLOCKSIZE) = ni
+                //xi = ni%(thead_blocksize * BLOCKSIZE)
+                //yi = ni/(thread_blocksize * BLOCKSIZE)
                 //xi+1 - xi + (yi+1 - yi)*thread_blocksize = ni+1 - ni
                 //
                 
@@ -459,8 +476,6 @@ public:
                 int last_y =0;
                 for(int m=0; m<t_work_length; m++)//ajouter les blocks swappes
                 {
-                    
-                   
                     Block first= phasesTemp[i][j]->back();
                     phasesTemp[i][j]->pop_back();
                     
@@ -516,18 +531,13 @@ public:
                     last_y = first.index_y;
                     
                 }
-                
-               
-                
-                
             }
         }
     }
     
     int thread_number()
     {
-        thNb++;
-        return thNb-1;
+        return thNb++;
     }
    
     
@@ -543,10 +553,6 @@ public:
             workThread(barrier2, thread_nb);
             barrier.wait();
         }
-        
-        
-        
-        
     }
     void work2(boost::barrier& barrier,boost::barrier& barrier2, int n_work)
     {
@@ -560,11 +566,7 @@ public:
             workThread2(barrier2, thread_nb);
             barrier.wait();
         }
-        
-        
-        
-        
-    }
+     }
     
     void workThread(boost::barrier& barrier2, int thNb)
     {
@@ -615,28 +617,21 @@ public:
            
             for(int m = 0; m<work_nb; m++)
             {
+                pad += index[m];
                 
-            
-                    pad += index[m];
+                if(dist <0)
+                {
+                    iy = iy_f+ pad%relevantSize;
+                    change = (iy+index[m]-iy_f >= relevantSize) || m ==0;
+                    ix = ix_f+ (int) pad/relevantSize;
                     
-                
-                    if(dist <0)
-                    {
-                        iy = iy_f+ pad%relevantSize;
-                        change = (iy+index[m]-iy_f >= relevantSize) || m ==0;
-                        ix = ix_f+ (int) pad/relevantSize;
-                        
-                    }
-                    else
-                    {
-                        change = (ix+index[m]-ix_f >= relevantSize) || m ==0;
-                        ix = ix_f+ pad%relevantSize;
-                        iy = iy_f+ (int) pad/relevantSize;
-                    }
-               
-                
-        
-               
+                }
+                else
+                {
+                    change = (ix+index[m]-ix_f >= relevantSize) || m ==0;
+                    ix = ix_f+ pad%relevantSize;
+                    iy = iy_f+ (int) pad/relevantSize;
+                }
                 
                 real a0 = work[16*m+0];
                 real a1 = work[16*m+1];
@@ -657,13 +652,13 @@ public:
                
                 if(m!=0)
                     {
-                        if(dist>=0)//Cas de base, on it√®re sur x
+                        if(dist>=0)//Cas de base, on itère sur x
                         {
                             if(!change)
                                 {
                                     
                                 }
-                                else//Je change Y2 et X1, j'applique donc les r√©sultats des calculs pr√©cendents
+                                else//Je change Y2 et X1, j'applique donc les résultats des calculs précendents
                                 {
                                     Y2_[0] += y20;
                                     Y2_[1] += y21;
@@ -694,19 +689,13 @@ public:
                                 y11 =0;
                                 y12=0;
                                 y13=0;
-                            
-                            
                             }
                         else
                         {
-                            
-                            
-                                if(!change)//Je change Y2 et X1, j'applique donc les r√©sultats des calculs pr√©cendents
+                            if(!change)//Je change Y2 et X1, j'applique donc les résultats des calculs précendents
                                 {}
                                 else
                                 {
-                                    
-        
                                     Y2_[0] += y20;
                                     Y2_[1] += y21;
                                     Y2_[2] += y22;
@@ -738,18 +727,11 @@ public:
                                 y12=0;
                                 y13=0;
                                 y11 = 0;
-                                
-                            
-                        
-                            
-                            
-                            
-                            
-                        }
+                            }
                     }
                 else
                     {
-                        if(dist>=0)//Cas de base, on it√®re sur x
+                        if(dist>=0)//Cas de base, on itère sur x
                         {
                             
                             Y2_= Y2 + iy;
@@ -799,12 +781,10 @@ public:
                     }
                 if(ix-iy !=0)
                 {
-                    
-    
-                    {real & c = a0;
-                        
-                        y10 += c*r10;
-                        y20 += c*r20;
+                    {
+                        real & c = a0;
+                        y10 += c * r10;
+                        y20 += c * r20;
                     }
                     {
                         real & c = a1;
@@ -832,7 +812,7 @@ public:
                         y20 += c * r23;
                     }
                     {
-                        real & c  = aC;
+                        real & c = aC;
                         y10 += c *r13;
                         y23 += c * r20;
                     }
@@ -842,29 +822,29 @@ public:
                         y21 += c *r21;
                     }
                     {
-                        real & c=  a6;
+                        real & c = a6;
                         y12 += c*r11;
                         y21 += c*r22;
                     }
                     {
                         real & c = a9;
-                        y11 += c *r12;
-                        y22 += c *r21;
+                        y11 += c * r12;
+                        y22 += c * r21;
                     }
                     {
-                        real &c  = a7;
-                        y13 += c *r11;
+                        real & c = a7;
+                        y13 += c * r11;
                         y21 += c * r23;
                     }
                     {
                         real & c  = aD;
-                        y11 +=c*r13;
-                        y23 += c *r21;
+                        y11 += c * r13;
+                        y23 += c * r21;
                     }
                     {
                         real & c  = aA;
                         y12 += c * r12;
-                        y22 += c* r22;
+                        y22 += c * r22;
                     }
                     {
                         real & c = aE;
@@ -936,13 +916,8 @@ public:
             
             for(int m = 0; m<work_nb; m++)
             {
-                
-                
                 int ix = index[m*2+0];
                 int iy = index[m*2+1];
-                
-        
-               
               
                 real a0 = work[16*m+0];
                 real a1 = work[16*m+1];
@@ -1146,13 +1121,10 @@ public:
         }
         for(int i=0;i<big_mat_size;i++)
         {
-                
-                Y[i]+= Y1[i]+Y2[i];
-                
+            Y[i] += Y1[i] + Y2[i];
         }
-        
-    
     }
+    
     void vecMulAddnTimes2(const real*X_calc, real*Y, int n_time)
     {
         //Start thread,
@@ -1170,10 +1142,6 @@ public:
                 threads[i] = boost::thread(boost::bind(&MatSymBMtInstance::work2, this,boost::ref(bar),boost::ref(bar2), n_time));;
             }
             
-            
-            
-           
-            
             for(int i=0;i<nbThreads; i++)
             {
                 threads[i].join();
@@ -1189,14 +1157,10 @@ public:
             // Handle exception here if needed
             
         }
-        for(int i=0;i<big_mat_size;i++)
+        for(int i=0; i<big_mat_size; i++)
         {
-                
-                Y[i]+= Y1[i]+Y2[i];
-                
+                Y[i] += Y1[i] + Y2[i];
         }
-        
-    
     }
 };
 
