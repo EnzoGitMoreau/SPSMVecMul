@@ -152,6 +152,7 @@ double* amd_matrix_vecmul(int size, int nTests, std::vector<std::pair<int, int>>
     armpl_spmat_destroy(armpl_mat);
     return y;
 }
+
 void fillSMSB(int nbBlocks, int matsize,int blocksize, SparMatSymBlk* matrix)
 {
     
@@ -169,26 +170,22 @@ void fillSMSB(int nbBlocks, int matsize,int blocksize, SparMatSymBlk* matrix)
 
 int main(int argc, char* argv[])
 {
-
     using milli = std::chrono::milliseconds;
-    int blocksize = 4;
-    int size;
-    int nb_threads;
+    int size = 0;
+    int nb_threads = 1;
     int nMatrix = 1;
-    double block_percentage = 0.10;
+    int nBlocks = 0;
+    
     if (argc < 4) {
-        std::cerr << "Usage: tests nb_threads matSize" << std::endl;
-        
+        std::cerr << "Usage: tests nb_threads matSize nMatrix" << std::endl;
         return 1;
-        }
-        else
+    }
+    else
     {
         try
         {
+            nb_threads = std::stoi(argv[1]);
             size = std::stoi(argv[2]);
-            nb_threads = std::stoi(argv[1]); 
-
-            
             nMatrix = std::stoi(argv[3]);
         }
         catch(std::exception e)
@@ -199,27 +196,27 @@ int main(int argc, char* argv[])
         if(size%(nb_threads*4)!= 0)
         {
             size = (int)(size / nb_threads) *nb_threads;
-           
         }
+        nBlocks = (int) size*size*0.1/16;
         if(argc >=5)
         {
-        try
-        {
-            block_percentage = std::stod(argv[4]);
-        }
-        catch(std::exception e)
-        {
-            std::cerr << "block percentage not recognized as a double: usage x.f";
-            return 1;
-        }
+            try
+            {
+                nBlocks = (int) size*size/16 * std::stod(argv[4]);
+            }
+            catch(std::exception e)
+            {
+                std::cerr << "block percentage not recognized as a double: usage x.f\n";
+                return 1;
+            }
         }
     }
    
-    real* Vec = (real*)malloc(size * sizeof(real));//Defining vector to do MX
-    real* Y_res = (real*)malloc(size * sizeof(real));//Y
-    real* Y_true = (real*)malloc(size * sizeof(real));//Y_true to compare
-    real* y_arm = (real*)malloc(size * sizeof(real));//Y_true to compare
-    real* Y_dif = (real*)malloc(size * sizeof(real));//Y_diff that will store differences
+    real* Vec = new_real(size);//Defining vector to do MX
+    real* Y_res = new_real(size);//Y
+    real* Y_true = new_real(size);//Y_true to compare
+    real* y_arm = new_real(size);//Y_true to compare
+    real* Y_dif = new_real(size);//Y_diff that will store differences
     for(int i=0; i<size;i++)
     {
         Vec[i]=i;//Init
@@ -230,7 +227,7 @@ int main(int argc, char* argv[])
 
     
     //Selecting blocks
-    std::vector<std::pair<int, int>> pairs = select_random_points(size/4,(int) size*size/16 * block_percentage);
+    std::vector<std::pair<int, int>> pairs = select_random_points(size/4, nBlocks);
     //Init SPSM
     SparMatSymBlk testMatrix = SparMatSymBlk();
     testMatrix.allocate(size);
@@ -239,7 +236,7 @@ int main(int argc, char* argv[])
     add_block_to_pos_std(&testMatrix, pairs, size);
     testMatrix.prepareForMultiply(1);
     //End of SPSM Init
-    std::cout<<"Constructed matrix of size "<<size<<" with "<<(int) size*size/16 * block_percentage <<" blocks of size 4, preparing to do "<<nMatrix<<" multiplications";
+    std::cout<<"Constructed matrix of size "<<size<<" with "<< nBlocks <<" blocks of size 4, preparing to do "<<nMatrix<<" multiplications";
     
     omp_set_num_threads(nb_threads);
 
@@ -275,7 +272,6 @@ int main(int argc, char* argv[])
     std::ofstream outfile2;
     outfile2.open("res/newImpl.csv", std::ios::app);
     std::cout<<"[INFO] Starting new-impl matrix-vector multiplications\n";
-    using milli = std::chrono::milliseconds;
     start = std::chrono::high_resolution_clock::now();
     testMatrix.vecMulMt2(nb_threads, Vec, Y_res,nMatrix);
     stop = std::chrono::high_resolution_clock::now();
@@ -297,36 +293,23 @@ int main(int argc, char* argv[])
     for(int i=0; i<size;i++)
     {
         Y_dif[i] = Y_res[i] - Y_true[i];
-        if(Y_dif[i]!=0)
-        {
-            nbDiff++;
-        }
-       
+        nbDiff += ( Y_dif[i] != 0 );
     }
-
-if(nbDiff !=0)
-{
-    std::cout<<"Resultat computation originelle\n";
-    for(int i =0; i< size; i++)
-    {
-        std::cout<<Y_true[i]<<" ";
-    }
-    std::cout<<"Resultat computation maison\n";
-    for(int i =0; i< size; i++)
-    {
-        std::cout<<Y_res[i]<<" ";
-    }
-    std::cout<<"\n\nDifference of true_computation\n";
-    for(int i=0; i<size;i++)
-    {
-        std::cout<<Y_dif[i]<<" ";
-    }
-}
-else
-{
-        std::cout<<"\nComputation went well";
-}
     
-    
- 
+    if(nbDiff !=0)
+    {
+        std::cout<<"Resultat computation originelle\n";
+        for(int i =0; i< size; i++)
+            std::cout<<Y_true[i]<<" ";
+        std::cout<<"Resultat computation maison\n";
+        for(int i =0; i< size; i++)
+            std::cout<<Y_res[i]<<" ";
+        std::cout<<"\n\nDifference of true_computation\n";
+        for(int i=0; i<size;i++)
+            std::cout<<Y_dif[i]<<" ";
+    }
+    else
+    {
+        std::cout<<"\nComputation went well\n";
+    }
 }
