@@ -1,15 +1,16 @@
-CXX = /opt/homebrew/Cellar/llvm/18.1.6/bin/clang++
-CC = /opt/homebrew/Cellar/llvm/18.1.6/bin/clang
+CXX = g++
+CC = gcc
 
 OPENBLAS_DIR = /opt/homebrew/Cellar/openblas/0.3.27
 OPENMP_DIR = /opt/Homebrew/Cellar/libomp/18.1.6
-ARM_PER_LIB = /opt/arm/armpl_24.04_flang-new_clang_18
+
 CURRENT_DIR = $(shell pwd)
 EXEC = tests
-CXXFLAGS =  -Xclang -std=c++17 -std=c17 -fopenmp=libomp -O3
+CXXFLAGS =  -fopenmp  -g
 
 INCLUDES = -Iinclude/ \
-	-Ibin/boost_1_84_0/\
+	-Iboost_1_82_0/\
+	-I/usr/include/aarch64-linux-gnu/\
 	-I$(OPENBLAS_DIR)\
 	-I$(GraphBLAS) \
 	-I$(OPENMP_DIR)/lib \
@@ -17,8 +18,8 @@ INCLUDES = -Iinclude/ \
 	
        
 SRC_PATH = src
-LIB_DIRS = -L$(OPENBLAS_DIR)/lib -Lbin/boost_1_84_0/stage/lib -L/usr/local/lib -L$(OPENMP_DIR)/lib -L$(ARM_PER_LIB)/lib
-LIBS = -lboost_thread -lopenblasp-r0.3.27  -larmpl_lp64
+LIB_DIRS = -L -Lboost_1_82_0/stage/lib -L/usr/local/lib -L$(OPENMP_DIR)/lib 
+LIBS = -lboost_thread -lopenblas
 SRCS = $(SRC_PATH)/main.cpp \
  $(SRC_PATH)/sparmatsymblk.cc \
  $(SRC_PATH)/MatSymBMtInstance.cpp \
@@ -49,10 +50,8 @@ profile:
 
 	
 install:
-	install_name_tool -add_rpath $(CURRENT_DIR)/bin/boost_1_84_0/stage/lib $(EXEC) && \
-       install_name_tool -add_rpath /usr/local/lib $(EXEC)&& \
-       install_name_tool -add_rpath $(OPENMP_DIR)/lib $(EXEC)
-	    install_name_tool -add_rpath $(ARM_PER_LIB)/lib $(EXEC)
+	
+	   
 clean:
 	rm -f $(OBJS) $(TARGET)
 
