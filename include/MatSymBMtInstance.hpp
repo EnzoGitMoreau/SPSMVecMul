@@ -28,13 +28,11 @@ private:
     int phase_number;
     int* phase_tab;
     int nbThreads;
-    #ifndef MACOS
-    std::mutex _mutex;
-    #endif 
+   
 
-    #ifdef MACOS
+
     boost::mutex _mutex;    
-    #endif 
+  
     
     int big_mat_size;
     real* Y1;
