@@ -1799,8 +1799,8 @@ public:
         try
         {
            std::vector<std::thread> threads;
-            std::barrier bar(nbThreads);
-            std::barrier bar2(nbThreads);
+            std::barrier<> bar(nbThreads);
+            std::barrier<> bar2(nbThreads);
             for(int i=0;i<nbThreads; i++)
             {
                 threads.emplace_back(&MatSymBMtInstance::work2, this,std::ref(bar),std::ref(bar2), n_time);
