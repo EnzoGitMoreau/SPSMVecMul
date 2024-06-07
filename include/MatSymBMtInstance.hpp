@@ -19,9 +19,7 @@
 #endif 
 #include "sparmatsymblk.h"
 #include "real.h"
-#include "boost/thread.hpp"
-#include <boost/thread/barrier.hpp>
-
+#include "omp.h"
 class MatSymBMtInstance final
 {
 private:
@@ -30,8 +28,9 @@ private:
     int nbThreads;
    
 
+    omp_lock_t _mutex;
 
-    boost::mutex _mutex;    
+    
   
     
     int big_mat_size;
@@ -542,43 +541,247 @@ public:
         return thNb-1;
     }
    
-    #ifndef MACOS
-    void work(boost::barrier& barrier,boost::barrier& barrier2, int n_work)
+    #ifndef MACOS 
+    void work(int thread_id, int n_work)
     {
-        _mutex.lock();
+        omp_set_lock(&_mutex);
         int thread_nb = thread_number();
-        //std::cout<<"Thread number:  "<<thread_nb<<"\n";
-        _mutex.unlock();
+        std::cout<<"Thread number:  "<<thread_nb<<"\n";
+        omp_unset_lock(&_mutex);
         
         for(int m = 0; m<n_work;m++)
         {
-            workThread(barrier2, thread_nb);
-            barrier.wait();
+            workThread(thread_nb);
+          
         }
         
         
         
         
     }
-    void work2(boost::barrier& barrier,boost::barrier& barrier2, int n_work)
+    void work2(int thread_id, int n_work)
     {
-        _mutex.lock();
+        omp_set_lock(&_mutex);
         int thread_nb = thread_number();
-        //std::cout<<"Thread number:  "<<thread_nb<<"\n";
-        _mutex.unlock();
+        std::cout<<"Thread number:  "<<thread_id<<"\n";
+        omp_unset_lock(&_mutex);
         
         for(int m = 0; m<n_work;m++)
         {
-            workThread2(barrier2, thread_nb);
-            barrier.wait();
+            workThread2(thread_id);
+            
+           
         }
         
         
         
-        
     }
-    
-    void workThread(boost::barrier& barrier2, int thNb)
+    void workThread2(int thNb)
+    {
+        
+        
+        int k = 0;
+        real* work;
+        int work_nb;
+        
+        const real* X1;
+        const real* X2;
+        real* Y1_;
+        real* Y2_;
+        
+        while(k<phase_number)
+        {
+            //std::cout<<"\nStart of phase"<<k<<"\n";
+             
+            omp_set_lock(&_mutex);
+           
+            work =  workingPhases[k][thNb];
+            
+            work_nb = work_lengths[k][thNb];
+           
+            int* index = workingIndexes[k][thNb];
+            
+            omp_unset_lock(&_mutex);
+            
+            for(int m = 0; m<work_nb; m++)
+            {
+                
+                
+                int ix = index[m*2+0];
+                int iy = index[m*2+1];
+                
+        
+               
+              
+                real a0 = work[16*m+0];
+                real a1 = work[16*m+1];
+                real a2 = work[16*m+2];
+                real a3 = work[16*m+3];
+                real a4 = work[16*m+4];
+                real a5 = work[16*m+5];
+                real a6 = work[16*m+6];
+                real a7 = work[16*m+7];
+                real a8 = work[16*m+8];
+                real a9 = work[16*m+9];
+                real aA = work[16*m+10];
+                real aB = work[16*m+11];
+                real aC = work[16*m+12];
+                real aD = work[16*m+13];
+                real aE = work[16*m+14];
+                real aF = work[16*m+15];
+                
+                if(ix-iy >=0)
+                {
+                    X1 = X  + iy;
+                    X2 = X  + ix;
+                    Y1_= Y1 + ix;
+                    Y2_= Y2 + iy;
+                    
+                }
+                else
+                {
+                    
+                    X1 = X  + ix;
+                    X2 = X  + iy;
+                    Y2_= Y1 + ix;
+                    Y1_= Y2 + iy;
+                    
+                    
+                }
+                
+                if(ix-iy !=0)
+                {
+                    
+                    real y10 = 0;
+                    real y11 = 0;
+                    real y12=0;
+                    real y13=0;
+                    real y20 = 0;
+                    real y21 = 0;
+                    real y22 = 0;
+                    real y23=0;
+                    real r10 = X1[0];
+                    real r11 = X1[1];
+                    real r12 = X1[2];
+                    real r13 = X1[3];
+                    real r20 = X2[0];
+                    real r21 = X2[1];
+                    real r22 = X2[2];
+                    real r23 = X2[3];
+                    {real & c = a0;
+                        
+                        y10 += c*r10;
+                        y20 += c*r20;
+                    }
+                    {
+                        real & c = a1;
+                        y11 += c * r10;
+                        y20 += c * r21;
+                    }
+                    {
+                        real & c = a4;
+                        y10 += c * r11;
+                        y21 += c * r20;
+                    }
+                    {
+                        real & c = a2;
+                        y12 += c * r10;
+                        y20 += c * r22;
+                    }
+                    {
+                        real& c = a8;
+                        y10 += c * r12;
+                        y22 += c* r20;
+                    }
+                    {
+                        real & c = a3;
+                        y13 += c * r10;
+                        y20 += c * r23;
+                    }
+                    {
+                        real & c  = aC;
+                        y10 += c *r13;
+                        y23 += c * r20;
+                    }
+                    {
+                        real & c = a5;
+                        y11+= c*r11;
+                        y21 += c *r21;
+                    }
+                    {
+                        real & c=  a6;
+                        y12 += c*r11;
+                        y21 += c*r22;
+                    }
+                    {
+                        real & c = a9;
+                        y11 += c *r12;
+                        y22 += c *r21;
+                    }
+                    {
+                        real &c  = a7;
+                        y13 += c *r11;
+                        y21 += c * r23;
+                    }
+                    {
+                        real & c  = aD;
+                        y11 +=c*r13;
+                        y23 += c *r21;
+                    }
+                    {
+                        real & c  = aA;
+                        y12 += c * r12;
+                        y22 += c* r22;
+                    }
+                    {
+                        real & c = aE;
+                        y12 += c * r13;
+                        y23 += c * r22;
+                    }
+                    {
+                        real & c = aB;
+                        y13 += c * r12;
+                        y22 += c *r23;
+                    }
+                    {
+                        real & c = aF;
+                        y13 += c * r13;
+                        y23 += c *r23;
+                    }
+                    
+                    Y1_[0] += y10;
+                    Y1_[1] += y11;
+                    Y1_[2] += y12;
+                    Y1_[3] += y13;
+                    Y2_[0] += y20;
+                    Y2_[1] += y21;
+                    Y2_[2] += y22;
+                    Y2_[3] += y23;
+                    
+                    
+                   
+                }
+                else
+                {
+                    Matrix44* restored = new Matrix44(a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,aA,aB,aC,aD,aE,aF);
+                    Vector4 res1=restored->vecmul(X1);
+                    for(int i=0;i<4;i++)
+                    {
+                        Y1_[i] += res1[i];
+                        
+                    }
+                }
+            }
+            
+            
+           
+             #pragma omp barrier
+            k++;
+            
+        }
+}
+ 
+    void workThread( int thNb)
     {
         
         
@@ -610,14 +813,14 @@ public:
         {
             //std::cout<<"\nStart of phase"<<k<<"\n";
             
-            _mutex.lock();
+            omp_set_lock(&_mutex);
             work =  workingPhases[k][thNb];
             work_nb = work_lengths[k][thNb];
             unsigned short* index = workingIndexes7[k][thNb];
             
             int ix_f = firstBlocks[k][thNb]%65535;
             int iy_f = firstBlocks[k][thNb]/65535;
-            _mutex.unlock();
+            omp_unset_lock(&_mutex);
             
             int pad = 0;
             short dist = ix_f - iy_f;
@@ -920,203 +1123,7 @@ public:
                 }
             }
             
-            barrier2.wait();
-            k++;
-        }
-}
-    void workThread2(boost::barrier& barrier2, int thNb)
-    {
-        
-        
-        int k = 0;
-        real* work;
-        int work_nb;
-        
-        const real* X1;
-        const real* X2;
-        real* Y1_;
-        real* Y2_;
-        while(k<phase_number)
-        {
-            //std::cout<<"\nStart of phase"<<k<<"\n";
-            
-            _mutex.lock();
-            work =  workingPhases[k][thNb];
-            work_nb = work_lengths[k][thNb];
-            int* index = workingIndexes[k][thNb];
-            _mutex.unlock();
-            
-            for(int m = 0; m<work_nb; m++)
-            {
-                
-                
-                int ix = index[m*2+0];
-                int iy = index[m*2+1];
-                
-        
-               
-              
-                real a0 = work[16*m+0];
-                real a1 = work[16*m+1];
-                real a2 = work[16*m+2];
-                real a3 = work[16*m+3];
-                real a4 = work[16*m+4];
-                real a5 = work[16*m+5];
-                real a6 = work[16*m+6];
-                real a7 = work[16*m+7];
-                real a8 = work[16*m+8];
-                real a9 = work[16*m+9];
-                real aA = work[16*m+10];
-                real aB = work[16*m+11];
-                real aC = work[16*m+12];
-                real aD = work[16*m+13];
-                real aE = work[16*m+14];
-                real aF = work[16*m+15];
-                
-                if(ix-iy >=0)
-                {
-                    X1 = X  + iy;
-                    X2 = X  + ix;
-                    Y1_= Y1 + ix;
-                    Y2_= Y2 + iy;
-                    
-                }
-                else
-                {
-                    
-                    X1 = X  + ix;
-                    X2 = X  + iy;
-                    Y2_= Y1 + ix;
-                    Y1_= Y2 + iy;
-                    
-                    
-                }
-                
-                if(ix-iy !=0)
-                {
-                    
-                    real y10 = 0;
-                    real y11 = 0;
-                    real y12=0;
-                    real y13=0;
-                    real y20 = 0;
-                    real y21 = 0;
-                    real y22 = 0;
-                    real y23=0;
-                    real r10 = X1[0];
-                    real r11 = X1[1];
-                    real r12 = X1[2];
-                    real r13 = X1[3];
-                    real r20 = X2[0];
-                    real r21 = X2[1];
-                    real r22 = X2[2];
-                    real r23 = X2[3];
-                    {real & c = a0;
-                        
-                        y10 += c*r10;
-                        y20 += c*r20;
-                    }
-                    {
-                        real & c = a1;
-                        y11 += c * r10;
-                        y20 += c * r21;
-                    }
-                    {
-                        real & c = a4;
-                        y10 += c * r11;
-                        y21 += c * r20;
-                    }
-                    {
-                        real & c = a2;
-                        y12 += c * r10;
-                        y20 += c * r22;
-                    }
-                    {
-                        real& c = a8;
-                        y10 += c * r12;
-                        y22 += c* r20;
-                    }
-                    {
-                        real & c = a3;
-                        y13 += c * r10;
-                        y20 += c * r23;
-                    }
-                    {
-                        real & c  = aC;
-                        y10 += c *r13;
-                        y23 += c * r20;
-                    }
-                    {
-                        real & c = a5;
-                        y11+= c*r11;
-                        y21 += c *r21;
-                    }
-                    {
-                        real & c=  a6;
-                        y12 += c*r11;
-                        y21 += c*r22;
-                    }
-                    {
-                        real & c = a9;
-                        y11 += c *r12;
-                        y22 += c *r21;
-                    }
-                    {
-                        real &c  = a7;
-                        y13 += c *r11;
-                        y21 += c * r23;
-                    }
-                    {
-                        real & c  = aD;
-                        y11 +=c*r13;
-                        y23 += c *r21;
-                    }
-                    {
-                        real & c  = aA;
-                        y12 += c * r12;
-                        y22 += c* r22;
-                    }
-                    {
-                        real & c = aE;
-                        y12 += c * r13;
-                        y23 += c * r22;
-                    }
-                    {
-                        real & c = aB;
-                        y13 += c * r12;
-                        y22 += c *r23;
-                    }
-                    {
-                        real & c = aF;
-                        y13 += c * r13;
-                        y23 += c *r23;
-                    }
-                    
-                    Y1_[0] += y10;
-                    Y1_[1] += y11;
-                    Y1_[2] += y12;
-                    Y1_[3] += y13;
-                    Y2_[0] += y20;
-                    Y2_[1] += y21;
-                    Y2_[2] += y22;
-                    Y2_[3] += y23;
-                    
-                    
-                   
-                }
-                else
-                {
-                    Matrix44* restored = new Matrix44(a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,aA,aB,aC,aD,aE,aF);
-                    Vector4 res1=restored->vecmul(X1);
-                    for(int i=0;i<4;i++)
-                    {
-                        Y1_[i] += res1[i];
-                        
-                    }
-                }
-            }
-            
-            barrier2.wait();
+            #pragma omp barrier 
             k++;
         }
 }
@@ -1126,29 +1133,21 @@ public:
 
         X= X_calc;
         generateBlocks();
+        omp_init_lock(&_mutex);
      
         try
         {
-            boost::thread* threads = (boost::thread*) malloc(sizeof(boost::thread)*nbThreads);
-            boost::barrier bar(nbThreads);
-            boost::barrier bar2(nbThreads);
-            for(int i=0;i<nbThreads; i++)
+            
+            
+            #pragma omp parallel num_threads(4)
             {
-                threads[i] = boost::thread(boost::bind(&MatSymBMtInstance::work, this,boost::ref(bar),boost::ref(bar2), n_time));;
+                std::cout<<"Thread number"<<omp_get_thread_num();
+                std::cout<<"OPEN MP VARIABLES:"<<omp_get_dynamic()<<"";
+                int thread_id = omp_get_thread_num();
+                work(thread_id, n_time);
             }
             
-            
-            
-           
-            
-            for(int i=0;i<nbThreads; i++)
-            {
-                threads[i].join();
-            }
-            for(int i=0; i<nbThreads;i++)
-            {
-                threads[i].interrupt();
-            }
+        
         }
         catch (const std::exception &e)
         {
@@ -1167,714 +1166,64 @@ public:
     }
     void vecMulAddnTimes2(const real*X_calc, real*Y, int n_time)
     {
-        //Start thread,
-        //Calculate, wait, calculate, wait..
-        X= X_calc;
-        generateBlocks2();
-        //generateBlocks4thWay();
-        try
-        {
-            boost::thread* threads = (boost::thread*) malloc(sizeof(boost::thread)*nbThreads);
-            boost::barrier bar(nbThreads);
-            boost::barrier bar2(nbThreads);
-            for(int i=0;i<nbThreads; i++)
+            //Start thread,
+            //Calculate, wait, calculate, wait..
+            X= X_calc;
+            generateBlocks2();
+            omp_init_lock(&_mutex);
+            //generateBlocks4thWay();
+            #pragma omp parallel  
             {
-                threads[i] = boost::thread(boost::bind(&MatSymBMtInstance::work2, this,boost::ref(bar),boost::ref(bar2), n_time));;
-            }
-            
-            
-            
-           
-            
-            for(int i=0;i<nbThreads; i++)
+            try
             {
-                threads[i].join();
-            }
-            for(int i=0; i<nbThreads;i++)
-            {
-                threads[i].interrupt();
-            }
-        }
-        catch (const std::exception &e)
-        {
-            std::cerr << "Exception occurred: " << e.what() << std::endl;
-            // Handle exception here if needed
-            
-        }
-        for(int i=0;i<big_mat_size;i++)
-        {
                 
-                Y[i]+= Y1[i]+Y2[i];
                 
-        }
+                    std::cout<<"OPEN MP max threads"<<omp_get_max_threads();
+                    std::cout<<"OPEN MP VARIABLES:"<<omp_get_dynamic()<<"";
+                    std::cout<<"Thread number"<<omp_get_thread_num();
+                    int thread_id = omp_get_thread_num();
+                    work2(thread_id, n_time);
+                
+            }
+            catch (const std::exception &e)
+            {
+                std::cerr << "Exception occurred: " << e.what() << std::endl;
+                // Handle exception here if needed
+                
+            }
+            }
+            for(int i=0;i<big_mat_size;i++)
+            {
+                    
+                    Y[i]+= Y1[i]+Y2[i];
+                    
+            }
+            
         
-    
+    }
+    void testFunc(int thread_id)
+    {
+        std::cout<<"Thread number issou  : "<<thread_id;
     }
     #endif 
-    #ifdef NOBOOST
-    void work(std::barrier<>& barrier,std::barrier& barrier2, int n_work)
+    void init_lock()
     {
-        _mutex.lock();
-        int thread_nb = thread_number();
-        //std::cout<<"Thread number:  "<<thread_nb<<"\n";
-        _mutex.unlock();
-        
-        for(int m = 0; m<n_work;m++)
-        {
-            workThread(barrier2, thread_nb);
-            barrier.wait();
-        }
-        
-        
-        
-        
+        omp_init_lock(&_mutex);
     }
-    void work2(std::barrier& barrier,std::barrier& barrier2, int n_work)
+    void init_X(const real*X_calc)
     {
-        _mutex.lock();
-        int thread_nb = thread_number();
-        //std::cout<<"Thread number:  "<<thread_nb<<"\n";
-        _mutex.unlock();
-        
-        for(int m = 0; m<n_work;m++)
-        {
-            workThread2(barrier2, thread_nb);
-            barrier.wait();
-        }
-        
-        
-        
-        
-    }
-    
-    void workThread(std::barrier& barrier2, int thNb)
-    {
-        
-        
-        int k = 0;
-        real* work;
-        int work_nb;
-        int relevantSize = (int) matrix->size() / nbThreads;
-        const real* X1;
-        const real* X2;
-        real* Y1_;
-        real* Y2_;
-        real y20 = 0;
-        real y21 = 0;
-        real y22 = 0;
-        real y23=0;
-        real y10 = 0;
-        real y12=0;
-        real y13=0;
-        real y11 = 0;
-        real r10 = 0;
-        real r11 = 0;
-        real r12 = 0;
-        real r13 = 0;
-        real r20 = 0;
-        real r21 = 0;
-        real r22 = 0;
-        real r23 = 0;
-        while(k<phase_number)
-        {
-            //std::cout<<"\nStart of phase"<<k<<"\n";
-            
-            _mutex.lock();
-            work =  workingPhases[k][thNb];
-            work_nb = work_lengths[k][thNb];
-            unsigned short* index = workingIndexes7[k][thNb];
-            
-            int ix_f = firstBlocks[k][thNb]%65535;
-            int iy_f = firstBlocks[k][thNb]/65535;
-            _mutex.unlock();
-            
-            int pad = 0;
-            short dist = ix_f - iy_f;
-            bool change;
-            int ix = 0;
-            int iy =0;
-           
-            for(int m = 0; m<work_nb; m++)
-            {
-                
-            
-                    pad += index[m];
-                    
-                
-                    if(dist <0)
-                    {
-                        iy = iy_f+ pad%relevantSize;
-                        change = (iy+index[m]-iy_f >= relevantSize) || m ==0;
-                        ix = ix_f+ (int) pad/relevantSize;
-                        
-                    }
-                    else
-                    {
-                        change = (ix+index[m]-ix_f >= relevantSize) || m ==0;
-                        ix = ix_f+ pad%relevantSize;
-                        iy = iy_f+ (int) pad/relevantSize;
-                    }
-               
-                
-        
-               
-                
-                real a0 = work[16*m+0];
-                real a1 = work[16*m+1];
-                real a2 = work[16*m+2];
-                real a3 = work[16*m+3];
-                real a4 = work[16*m+4];
-                real a5 = work[16*m+5];
-                real a6 = work[16*m+6];
-                real a7 = work[16*m+7];
-                real a8 = work[16*m+8];
-                real a9 = work[16*m+9];
-                real aA = work[16*m+10];
-                real aB = work[16*m+11];
-                real aC = work[16*m+12];
-                real aD = work[16*m+13];
-                real aE = work[16*m+14];
-                real aF = work[16*m+15];
-               
-                if(m!=0)
-                    {
-                        if(dist>=0)//Cas de base, on itère sur x
-                        {
-                            if(!change)
-                                {
-                                    
-                                }
-                                else//Je change Y2 et X1, j'applique donc les résultats des calculs précendents
-                                {
-                                    Y2_[0] += y20;
-                                    Y2_[1] += y21;
-                                    Y2_[2] += y22;
-                                    Y2_[3] += y23;
-                                    Y2_= Y2 + iy;
-                                    X1 = X  + iy;
-                                    y20 = 0;
-                                    y21 = 0;
-                                    y22 = 0;
-                                    y23=0;
-                                    r10 = X1[0];
-                                    r11 = X1[1];
-                                    r12 = X1[2];
-                                    r13 = X1[3];
-                                }
-                                Y1_[0] += y10;
-                                Y1_[1] += y11;
-                                Y1_[2] += y12;
-                                Y1_[3] += y13;
-                                X2 = X  + ix;
-                                Y1_= Y1 + ix;
-                                r20 = X2[0];
-                                r21 = X2[1];
-                                r22 = X2[2];
-                                r23 = X2[3];
-                                y10 =0;
-                                y11 =0;
-                                y12=0;
-                                y13=0;
-                            
-                            
-                            }
-                        else
-                        {
-                            
-                            
-                                if(!change)//Je change Y2 et X1, j'applique donc les résultats des calculs précendents
-                                {}
-                                else
-                                {
-                                    
-        
-                                    Y2_[0] += y20;
-                                    Y2_[1] += y21;
-                                    Y2_[2] += y22;
-                                    Y2_[3] += y23;
-                                    
-                                    X1 = X  + ix;
-                                    Y2_= Y1 + ix;
-                                    r10 = X1[0];
-                                    r11 = X1[1];
-                                    r12 = X1[2];
-                                    r13 = X1[3];
-                                    y20 = 0;
-                                    y21 = 0;
-                                    y22 = 0;
-                                    y23=0;
-                                    
-                                }
-                                Y1_[0] += y10;
-                                Y1_[1] += y11;
-                                Y1_[2] += y12;
-                                Y1_[3] += y13;
-                                X2 = X  + iy;
-                                Y1_= Y2 + iy;
-                                r20 = X2[0];
-                                r21 = X2[1];
-                                r22 = X2[2];
-                                r23 = X2[3];
-                                y10 = 0;
-                                y12=0;
-                                y13=0;
-                                y11 = 0;
-                                
-                            
-                        
-                            
-                            
-                            
-                            
-                        }
-                    }
-                else
-                    {
-                        if(dist>=0)//Cas de base, on itère sur x
-                        {
-                            
-                            Y2_= Y2 + iy;
-                            X1 = X  + iy;
-                            X2 = X  + ix;
-                            Y1_= Y1 + ix;
-                            y10 =0;
-                            y11 =0;
-                            y12=0;
-                            y13=0;
-                            y20 = 0;
-                            y21 = 0;
-                            y22 = 0;
-                            y23=0;
-                            r10 = X1[0];
-                            r11 = X1[1];
-                            r12 = X1[2];
-                            r13 = X1[3];
-                            r20 = X2[0];
-                            r21 = X2[1];
-                            r22 = X2[2];
-                            r23 = X2[3];
-                        }
-                        else
-                        {
-                            X2 = X  + iy;
-                            Y1_= Y2 + iy;
-                            X1 = X  + ix;
-                            Y2_= Y1 + ix;
-                            y10 = 0;
-                            y12=0;
-                            y13=0;
-                            y11 = 0;
-                            y20 = 0;
-                            y21 = 0;
-                            y22 = 0;
-                            y23=0;
-                            r10 = X1[0];
-                            r11 = X1[1];
-                            r12 = X1[2];
-                            r13 = X1[3];
-                            r20 = X2[0];
-                            r21 = X2[1];
-                            r22 = X2[2];
-                            r23 = X2[3];
-                        }
-                    }
-                if(ix-iy !=0)
-                {
-                    
-    
-                    {real & c = a0;
-                        
-                        y10 += c*r10;
-                        y20 += c*r20;
-                    }
-                    {
-                        real & c = a1;
-                        y11 += c * r10;
-                        y20 += c * r21;
-                    }
-                    {
-                        real & c = a4;
-                        y10 += c * r11;
-                        y21 += c * r20;
-                    }
-                    {
-                        real & c = a2;
-                        y12 += c * r10;
-                        y20 += c * r22;
-                    }
-                    {
-                        real& c = a8;
-                        y10 += c * r12;
-                        y22 += c* r20;
-                    }
-                    {
-                        real & c = a3;
-                        y13 += c * r10;
-                        y20 += c * r23;
-                    }
-                    {
-                        real & c  = aC;
-                        y10 += c *r13;
-                        y23 += c * r20;
-                    }
-                    {
-                        real & c = a5;
-                        y11+= c*r11;
-                        y21 += c *r21;
-                    }
-                    {
-                        real & c=  a6;
-                        y12 += c*r11;
-                        y21 += c*r22;
-                    }
-                    {
-                        real & c = a9;
-                        y11 += c *r12;
-                        y22 += c *r21;
-                    }
-                    {
-                        real &c  = a7;
-                        y13 += c *r11;
-                        y21 += c * r23;
-                    }
-                    {
-                        real & c  = aD;
-                        y11 +=c*r13;
-                        y23 += c *r21;
-                    }
-                    {
-                        real & c  = aA;
-                        y12 += c * r12;
-                        y22 += c* r22;
-                    }
-                    {
-                        real & c = aE;
-                        y12 += c * r13;
-                        y23 += c * r22;
-                    }
-                    {
-                        real & c = aB;
-                        y13 += c * r12;
-                        y22 += c *r23;
-                    }
-                    {
-                        real & c = aF;
-                        y13 += c * r13;
-                        y23 += c *r23;
-                    }
-                    
-                }
-                else
-                {
-                    Matrix44* restored = new Matrix44(a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,aA,aB,aC,aD,aE,aF);
-                    Vector4 res1=restored->vecmul(X1);
-                    for(int i=0;i<4;i++)
-                    {
-                        Y1_[i] += res1[i];
-                        
-                    }
-                }
-                if(m!= work_nb-1)
-                {}
-                else
-                {
-                    Y1_[0] += y10;
-                    Y1_[1] += y11;
-                    Y1_[2] += y12;
-                    Y1_[3] += y13;
-                    Y2_[0] += y20;
-                    Y2_[1] += y21;
-                    Y2_[2] += y22;
-                    Y2_[3] += y23;
-                }
-            }
-            
-            barrier2.wait();
-            k++;
-        }
-}
-    void workThread2(std::barrier<>& barrier2, int thNb)
-    {
-        
-        
-        int k = 0;
-        real* work;
-        int work_nb;
-        
-        const real* X1;
-        const real* X2;
-        real* Y1_;
-        real* Y2_;
-        while(k<phase_number)
-        {
-            //std::cout<<"\nStart of phase"<<k<<"\n";
-            
-            _mutex.lock();
-            work =  workingPhases[k][thNb];
-            work_nb = work_lengths[k][thNb];
-            int* index = workingIndexes[k][thNb];
-            _mutex.unlock();
-            
-            for(int m = 0; m<work_nb; m++)
-            {
-                
-                
-                int ix = index[m*2+0];
-                int iy = index[m*2+1];
-                
-        
-               
-              
-                real a0 = work[16*m+0];
-                real a1 = work[16*m+1];
-                real a2 = work[16*m+2];
-                real a3 = work[16*m+3];
-                real a4 = work[16*m+4];
-                real a5 = work[16*m+5];
-                real a6 = work[16*m+6];
-                real a7 = work[16*m+7];
-                real a8 = work[16*m+8];
-                real a9 = work[16*m+9];
-                real aA = work[16*m+10];
-                real aB = work[16*m+11];
-                real aC = work[16*m+12];
-                real aD = work[16*m+13];
-                real aE = work[16*m+14];
-                real aF = work[16*m+15];
-                
-                if(ix-iy >=0)
-                {
-                    X1 = X  + iy;
-                    X2 = X  + ix;
-                    Y1_= Y1 + ix;
-                    Y2_= Y2 + iy;
-                    
-                }
-                else
-                {
-                    
-                    X1 = X  + ix;
-                    X2 = X  + iy;
-                    Y2_= Y1 + ix;
-                    Y1_= Y2 + iy;
-                    
-                    
-                }
-                
-                if(ix-iy !=0)
-                {
-                    
-                    real y10 = 0;
-                    real y11 = 0;
-                    real y12=0;
-                    real y13=0;
-                    real y20 = 0;
-                    real y21 = 0;
-                    real y22 = 0;
-                    real y23=0;
-                    real r10 = X1[0];
-                    real r11 = X1[1];
-                    real r12 = X1[2];
-                    real r13 = X1[3];
-                    real r20 = X2[0];
-                    real r21 = X2[1];
-                    real r22 = X2[2];
-                    real r23 = X2[3];
-                    {real & c = a0;
-                        
-                        y10 += c*r10;
-                        y20 += c*r20;
-                    }
-                    {
-                        real & c = a1;
-                        y11 += c * r10;
-                        y20 += c * r21;
-                    }
-                    {
-                        real & c = a4;
-                        y10 += c * r11;
-                        y21 += c * r20;
-                    }
-                    {
-                        real & c = a2;
-                        y12 += c * r10;
-                        y20 += c * r22;
-                    }
-                    {
-                        real& c = a8;
-                        y10 += c * r12;
-                        y22 += c* r20;
-                    }
-                    {
-                        real & c = a3;
-                        y13 += c * r10;
-                        y20 += c * r23;
-                    }
-                    {
-                        real & c  = aC;
-                        y10 += c *r13;
-                        y23 += c * r20;
-                    }
-                    {
-                        real & c = a5;
-                        y11+= c*r11;
-                        y21 += c *r21;
-                    }
-                    {
-                        real & c=  a6;
-                        y12 += c*r11;
-                        y21 += c*r22;
-                    }
-                    {
-                        real & c = a9;
-                        y11 += c *r12;
-                        y22 += c *r21;
-                    }
-                    {
-                        real &c  = a7;
-                        y13 += c *r11;
-                        y21 += c * r23;
-                    }
-                    {
-                        real & c  = aD;
-                        y11 +=c*r13;
-                        y23 += c *r21;
-                    }
-                    {
-                        real & c  = aA;
-                        y12 += c * r12;
-                        y22 += c* r22;
-                    }
-                    {
-                        real & c = aE;
-                        y12 += c * r13;
-                        y23 += c * r22;
-                    }
-                    {
-                        real & c = aB;
-                        y13 += c * r12;
-                        y22 += c *r23;
-                    }
-                    {
-                        real & c = aF;
-                        y13 += c * r13;
-                        y23 += c *r23;
-                    }
-                    
-                    Y1_[0] += y10;
-                    Y1_[1] += y11;
-                    Y1_[2] += y12;
-                    Y1_[3] += y13;
-                    Y2_[0] += y20;
-                    Y2_[1] += y21;
-                    Y2_[2] += y22;
-                    Y2_[3] += y23;
-                    
-                    
-                   
-                }
-                else
-                {
-                    Matrix44* restored = new Matrix44(a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,aA,aB,aC,aD,aE,aF);
-                    Vector4 res1=restored->vecmul(X1);
-                    for(int i=0;i<4;i++)
-                    {
-                        Y1_[i] += res1[i];
-                        
-                    }
-                }
-            }
-            
-            barrier2.wait();
-            k++;
-        }
-}
-
-    void vecMulAddnTimes(const real*X_calc, real*Y, int n_time)
-    {
-
         X= X_calc;
-        generateBlocks();
-     
-        try
-        {
-           std::vector<std::thread> threads;
-            std::barrier bar(nbThreads);
-            std::barrier bar2(nbThreads);
-            for(int i=0;i<nbThreads; i++)
-            {
-                threads.emplace_back(&MatSymBMtInstance::work2, this,std::ref(bar),std::ref(bar2), n_time);
-    
-            }
-            
-            
-           
-            
-            for(int i=0;i<nbThreads; i++)
-            {
-                threads[i].join();
-            }
-         
-        }
-        catch (const std::exception &e)
-        {
-            std::cerr << "Exception occurred: " << e.what() << std::endl;
-            // Handle exception here if needed
-            
-        }
-        for(int i=0;i<big_mat_size;i++)
-        {
-                
-                Y[i]+= Y1[i]+Y2[i];
-                
-        }
-        
-    
     }
-    void vecMulAddnTimes2(const real*X_calc, real*Y, int n_time)
+    void retrieve_Y(real* Y_res)
     {
-        //Start thread,
-        //Calculate, wait, calculate, wait..
-        X= X_calc;
-        generateBlocks2();
-        //generateBlocks4thWay();
-        try
-        {
-            std::vector<std::thread> threads;
-            std::barrier bar(nbThreads);
-            std::barrier bar2(nbThreads);
-            for(int i=0;i<nbThreads; i++)
-            {
-                threads.emplace_back(&MatSymBMtInstance::work2, this,std::ref(bar),std::ref(bar2), n_time);
-    
-            }
-            
-            
-            
-           
-            
-            for(int i=0;i<nbThreads; i++)
-            {
-                threads[i].join();
-            }
-         
-        }
-        catch (const std::exception &e)
-        {
-            std::cerr << "Exception occurred: " << e.what() << std::endl;
-            // Handle exception here if needed
-            
-        }
         for(int i=0;i<big_mat_size;i++)
-        {
-                
-                Y[i]+= Y1[i]+Y2[i];
-                
-        }
-        
-    
+            {
+                    
+                    Y_res[i]+= Y1[i]+Y2[i];
+                    
+            }
     }
-    #endif
+
 };
 
 #endif /* MatSymBMtInstance_hpp */

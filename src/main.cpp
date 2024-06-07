@@ -9,6 +9,7 @@
 #include "matrix.h"
 #include <time.h>
 #include "omp.h"
+#include "MatSymBMtInstance.hpp"
 #if MACOS 
 #include "armpl.h"
 #endif 
@@ -233,7 +234,7 @@ int main(int argc, char* argv[])
 
     
     //Selecting blocks
-    std::vector<std::pair<int, int>> pairs = select_random_points(size/4,(int) size*size/16 * block_percentage);
+    std::vector<std::pair<int, int>> pairs = select_random_points(size/4,(int) size*size/16 * block_percentage*block_percentage);
     //Init SPSM
     SparMatSymBlk testMatrix = SparMatSymBlk();
     testMatrix.allocate(size);
@@ -242,9 +243,15 @@ int main(int argc, char* argv[])
     add_block_to_pos_std(&testMatrix, pairs, size);
     testMatrix.prepareForMultiply(1);
     //End of SPSM Init
-    std::cout<<"Constructed matrix of size "<<size<<" with "<<(int) size*size/16 * block_percentage <<" blocks of size 4, preparing to do "<<nMatrix<<" multiplications";
+    std::cout<<"Constructed matrix of size "<<size<<" with "<<(int) size*size/16 * block_percentage *block_percentage<<" blocks of size 4, preparing to do "<<nMatrix<<" multiplications";
     
     omp_set_num_threads(nb_threads);
+    MatSymBMtInstance mtInstance(&testMatrix, nb_threads);
+    
+    mtInstance.generateBlocks2();
+    mtInstance.init_lock();
+    mtInstance.init_X(Vec);
+   
 
     std::cout<<"\n[STARTUP] OpenMP is enabled with " << omp_get_max_threads() <<" threads\n";
     std::ofstream outfile1;
@@ -265,6 +272,7 @@ int main(int argc, char* argv[])
     
     outfile1.open("res/standard.csv", std::ios::app);
     auto start = std::chrono::high_resolution_clock::now();
+   
     for(int i=0; i<nMatrix;i++)
     {
         testMatrix.vecMulAdd(Vec, Y_true);
@@ -282,7 +290,18 @@ int main(int argc, char* argv[])
     std::cout<<"[INFO] Starting new-impl matrix-vector multiplications\n";
     using milli = std::chrono::milliseconds;
     start = std::chrono::high_resolution_clock::now();
-    testMatrix.vecMulMt2(nb_threads, Vec, Y_res,nMatrix);
+     #pragma omp parallel        
+   {
+  
+    mtInstance.work2(omp_get_thread_num(),nMatrix);
+
+}
+
+    for(int i=0; i<nb_threads; i++)
+    {
+        mtInstance.work2(i,nMatrix);
+    }
+    mtInstance.retrieve_Y(Y_res);
     stop = std::chrono::high_resolution_clock::now();
     outfile2 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
     outfile2.close();

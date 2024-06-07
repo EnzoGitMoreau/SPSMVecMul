@@ -1,12 +1,12 @@
-CXX = /opt/homebrew/Cellar/llvm/18.1.6/bin/clang++
-CC = /opt/homebrew/Cellar/llvm/18.1.6/bin/clang
+CXX = /opt/homebrew/Cellar/llvm/18.1.5/bin/clang++
+CC = /opt/homebrew/Cellar/llvm/18.1.5/bin/clang
 
 OPENBLAS_DIR = /opt/homebrew/Cellar/openblas/0.3.27
 OPENMP_DIR = /opt/Homebrew/Cellar/libomp/18.1.6
 ARM_PER_LIB = /opt/arm/armpl_24.04_flang-new_clang_18
 CURRENT_DIR = $(shell pwd)
 EXEC = tests
-CXXFLAGS =  -Xclang -std=c++17 -std=c17 -fopenmp=libomp -O3
+CXXFLAGS =  -Xclang -std=c++17 -std=c17 -fopenmp=libomp -O3 -g
 
 
 INCLUDES = -Iinclude/ \
