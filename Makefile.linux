@@ -1,7 +1,7 @@
 CXX = g++
 CC = gcc
 
-OPENBLAS_DIR = /opt/homebrew/Cellar/openblas/0.3.27
+
 OPENMP_DIR = /opt/Homebrew/Cellar/libomp/18.1.6
 
 CURRENT_DIR = $(shell pwd)
@@ -10,13 +10,13 @@ CXXFLAGS = -std=c++20  -fopenmp -g -O3
 
 
 INCLUDES = -Iinclude/ \
-	-I/bin/boost_1_84_0/\
+	-I/home/co-more1/SPSMVecMul/bin/boost_1_84_0\
 	-I$(OPENBLAS_DIR)\
 
 	
        
 SRC_PATH = src
-LIB_DIRS = -L$(OPENBLAS_DIR)/lib -L/bin/boost_1_84_0/stage/lib -L/usr/local/lib
+LIB_DIRS = -L/home/co-more1/SPSMVecMul/bin/boost_1_84_0/stage/lib -L/usr/local/lib
 LIBS = -lboost_thread -lopenblas
 SRCS = $(SRC_PATH)/main.cpp \
  $(SRC_PATH)/sparmatsymblk.cc \
