@@ -6,7 +6,7 @@ OPENMP_DIR = /opt/Homebrew/Cellar/libomp/18.1.6
 
 CURRENT_DIR = $(shell pwd)
 EXEC = tests
-CXXFLAGS = -std=c++17 -std=c17 -fopenmp -g -O3
+CXXFLAGS = -std=c++17  -fopenmp -g -O3
 
 
 INCLUDES = -Iinclude/ \
