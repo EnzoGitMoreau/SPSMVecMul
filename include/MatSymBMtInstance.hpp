@@ -1810,13 +1810,13 @@ public:
             
            
             
-            for(int i=0;i<nbThreads; i++)
+            for(auto& thread : threads)
             {
-                threads[i].join();
+                thread.join();
             }
-            for(int i=0; i<nbThreads;i++)
+             for(auto& thread : threads)
             {
-                threads[i].interrupt();
+                thread.interrupt();
             }
         }
         catch (const std::exception &e)
@@ -1856,13 +1856,14 @@ public:
             
            
             
-            for(int i=0;i<nbThreads; i++)
+           
+            for(auto& thread : threads)
             {
-                threads[i].join();
+                thread.join();
             }
-            for(int i=0; i<nbThreads;i++)
+             for(auto& thread : threads)
             {
-                threads[i].interrupt();
+                thread.interrupt();
             }
         }
         catch (const std::exception &e)
