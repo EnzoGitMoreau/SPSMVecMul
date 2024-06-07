@@ -9,7 +9,7 @@
 #define MatSymBMtInstance_hpp
 
 #include <stdio.h>
-#include <arm_neon.h>
+
 #include "sparmatsymblk.h"
 #include "real.h"
 #include "boost/thread.hpp"
