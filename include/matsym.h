@@ -9,7 +9,10 @@
 #include "real.h"
 
 #include <cstdio>
+#ifdef MACOS
 #include <arm_neon.h>
+#endif
+
 #include <string>
 
 
@@ -98,11 +101,13 @@ public:
     void vecMulAddIso3D(const real* X, real* Y) const;
     void vecMulAddBlock(const real* X, real*Y, int index_x, int index_j, int blocksize, int matsize) const;
     void transVecMulAddBlock(const real* X, real*Y, int index_x, int index_j, int blocksize, int matsize) const;
+    #ifdef MACOS
     void vecMulAddBlock2(const real * __restrict__ X, real *__restrict__ Y, int index_x, int index_j, int blocksize, int matsize) const;
     void transVecMulAddBlock2(const real* X, real*Y1, real*Y2, int index_x1, int index_y1, int blocksize, int matsize) const;
     void transVecMulAddBlock3(const real* __restrict__ X1, const real* __restrict__ X2,real* __restrict__ Y1,  real* __restrict__ Y2, int blocksize, int matsize, const real* __restrict__ valptr )const;
     /// true if matrix is non-zero
     void transVecMulAddBlock4(const real* __restrict__ X1, const real* __restrict__ X2,real* __restrict__ Y1,  real* __restrict__ Y2, int blocksize, int matsize, const real* __restrict__ valptr )const;
+  
     void matrix_multiply_4x4_neon(const real* __restrict__ X1, const real* __restrict__ X2,real* __restrict__ Y1,  real* __restrict__ Y2, int blocksize, int matsize, const real* __restrict__ valptr)const;
     void matrix_multiply_4x4_neonMid(const real* __restrict__ X1,real* __restrict__ Y1 ,int blocksize, int matsize, const real* __restrict__ valptr)const;
     
@@ -210,7 +215,7 @@ public:
             
         }
     void vecMulPerBlock( const real* X, real* Y,size_t blocksize, int nbThread ) const;
-    
+    #endif 
     
     bool notZero() const;
     
