@@ -19,7 +19,7 @@ INCLUDES = -Iinclude/ \
        
 SRC_PATH = src
 LIB_DIRS = -L -L/home/co-more1/SPSMVecMul/boost_1_84_0/stage/lib -L/usr/local/lib -L$(OPENMP_DIR)/lib 
-LIBS = -l/home/co-more1/SPSMVecMul/boost_1_84_0/stage/lib/libboost_thread.so.1.84.0 -lopenblas
+LIBS = -l/home/co-more1/SPSMVecMul/boost_1_84_0/stage/lib/libboost_threadnew.so -lopenblas
 SRCS = $(SRC_PATH)/main.cpp \
  $(SRC_PATH)/sparmatsymblk.cc \
  $(SRC_PATH)/MatSymBMtInstance.cpp \
