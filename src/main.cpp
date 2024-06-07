@@ -9,7 +9,9 @@
 #include "matrix.h"
 #include <time.h>
 #include "omp.h"
+#if MACOS 
 #include "armpl.h"
+#endif 
 #include <deque> 
 #include <tuple>
 #include "real.h"
@@ -100,7 +102,7 @@ void setMatrixRandomValues(MatrixSymmetric matrix)
     }
     
 }
-
+#if MACOS 
 double* amd_matrix_vecmul(int size, int nTests, std::vector<std::pair<int, int>> pairs)
 {
     double* values = (double*) malloc(sizeof(double)*size*size);
@@ -152,6 +154,7 @@ double* amd_matrix_vecmul(int size, int nTests, std::vector<std::pair<int, int>>
     armpl_spmat_destroy(armpl_mat);
     return y;
 }
+#endif MACOS 
 void fillSMSB(int nbBlocks, int matsize,int blocksize, SparMatSymBlk* matrix)
 {
     
@@ -244,8 +247,10 @@ int main(int argc, char* argv[])
     omp_set_num_threads(nb_threads);
 
     std::cout<<"\n[STARTUP] OpenMP is enabled with " << omp_get_max_threads() <<" threads\n";
-    std::cout<<"[STARTUP] ARM PL is working\n";
     std::ofstream outfile1;
+    #if MACOS 
+    std::cout<<"[STARTUP] ARM PL is working\n";
+    
     outfile1.open("res/armpl.csv", std::ios::app);
     std::cout<<"[INFO] Starting ARMPL matrix-vector multiplications\n";
     auto start = std::chrono::high_resolution_clock::now();
@@ -254,18 +259,18 @@ int main(int argc, char* argv[])
     std::cout<<"[INFO] ARMPL multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
     outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
     outfile1.close();
-
+    #endif 
     std::cout<<"[INFO] Starting Cytosim matrix-vector multiplications\n";
     
-   
+    
     outfile1.open("res/standard.csv", std::ios::app);
-    start = std::chrono::high_resolution_clock::now();
+    auto start = std::chrono::high_resolution_clock::now();
     for(int i=0; i<nMatrix;i++)
     {
         testMatrix.vecMulAdd(Vec, Y_true);
     }
     
-    stop= std::chrono::high_resolution_clock::now();
+    auto stop= std::chrono::high_resolution_clock::now();
     
     outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
     outfile1.close();
