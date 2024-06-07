@@ -9,7 +9,9 @@
 #define MatSymBMtInstance_hpp
 
 #include <stdio.h>
+#ifdef MACOS
 #include <arm_neon.h>
+#endif 
 #include "sparmatsymblk.h"
 #include "real.h"
 #include "boost/thread.hpp"
