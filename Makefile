@@ -9,7 +9,7 @@ EXEC = tests
 CXXFLAGS = -std=c++11 -fopenmp 
 
 INCLUDES = -Iinclude/ \
-	-Iboost_1_84_0/\
+	-I/home/co-more1/SPSMVecMul/boost_1_84_0\
 	-I/usr/include/aarch64-linux-gnu/\
 	-I$(OPENBLAS_DIR)\
 	-I$(GraphBLAS) \
@@ -18,7 +18,7 @@ INCLUDES = -Iinclude/ \
 	
        
 SRC_PATH = src
-LIB_DIRS = -L -Lboost_1_84_0/stage/lib -L/usr/local/lib -L$(OPENMP_DIR)/lib 
+LIB_DIRS = -L -L/home/co-more1/SPSMVecMul/boost_1_84_0/stage/lib -L/usr/local/lib -L$(OPENMP_DIR)/lib 
 LIBS = -lboost_thread -lopenblas
 SRCS = $(SRC_PATH)/main.cpp \
  $(SRC_PATH)/sparmatsymblk.cc \
