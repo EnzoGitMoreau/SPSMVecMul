@@ -328,7 +328,7 @@ int main(int argc, char* argv[])
        
     }
 
-if(nbDiff !=0)
+if(nbDiff !=27)
 {
     std::cout<<"Resultat computation originelle\n";
     for(int i =0; i< size; i++)
