@@ -13,9 +13,9 @@
 #include <arm_neon.h>
 #endif
 #ifndef MACOS
-#include <thread>
-#include <barrier>
-#include <mutex>
+//#include <thread>
+//#include <barrier>
+//#include <mutex>
 #endif 
 #include "sparmatsymblk.h"
 #include "real.h"
@@ -544,7 +544,7 @@ public:
         return thNb-1;
     }
    
-    #ifdef MACOS
+    #ifndef MACOS
     void work(boost::barrier& barrier,boost::barrier& barrier2, int n_work)
     {
         _mutex.lock();
@@ -1213,7 +1213,7 @@ public:
     
     }
     #endif 
-    #ifndef MACOS
+    #ifdef NOBOOST
     void work(std::barrier<>& barrier,std::barrier& barrier2, int n_work)
     {
         _mutex.lock();
