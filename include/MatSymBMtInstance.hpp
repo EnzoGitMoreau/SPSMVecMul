@@ -13,6 +13,8 @@
 #include <arm_neon.h>
 #endif
 #ifndef MACOS
+#include <thread>
+#include <barrier>
 #include <mutex>
 #endif 
 #include "sparmatsymblk.h"
@@ -1212,7 +1214,7 @@ public:
     }
     #endif 
     #ifndef MACOS
-    void work(std::barrier& barrier,std::barrier& barrier2, int n_work)
+    void work(std::barrier<>& barrier,std::barrier& barrier2, int n_work)
     {
         _mutex.lock();
         int thread_nb = thread_number();
@@ -1593,7 +1595,7 @@ public:
             k++;
         }
 }
-    void workThread2(std::barrier& barrier2, int thNb)
+    void workThread2(std::barrier<>& barrier2, int thNb)
     {
         
         
@@ -1799,8 +1801,8 @@ public:
         try
         {
            std::vector<std::thread> threads;
-            std::barrier bar(nbThreads);
-            std::barrier bar2(nbThreads);
+            std::barrier<> bar(nbThreads);
+            std::barrier<> bar2(nbThreads);
             for(int i=0;i<nbThreads; i++)
             {
                 threads.emplace_back(&MatSymBMtInstance::work2, this,std::ref(bar),std::ref(bar2), n_time);
@@ -1814,10 +1816,7 @@ public:
             {
                 threads[i].join();
             }
-            for(int i=0; i<nbThreads;i++)
-            {
-                threads[i].interrupt();
-            }
+         
         }
         catch (const std::exception &e)
         {
@@ -1844,8 +1843,8 @@ public:
         try
         {
             std::vector<std::thread> threads;
-            std::barrier bar(nbThreads);
-            std::barrier bar2(nbThreads);
+            std::barrier<> bar(nbThreads);
+            std::barrier<> bar2(nbThreads);
             for(int i=0;i<nbThreads; i++)
             {
                 threads.emplace_back(&MatSymBMtInstance::work2, this,std::ref(bar),std::ref(bar2), n_time);
@@ -1860,10 +1859,7 @@ public:
             {
                 threads[i].join();
             }
-            for(int i=0; i<nbThreads;i++)
-            {
-                threads[i].interrupt();
-            }
+         
         }
         catch (const std::exception &e)
         {

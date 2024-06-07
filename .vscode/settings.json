@@ -80,6 +80,7 @@
 		"exception": "cpp",
 		"system_error": "cpp",
 		"memory": "cpp",
-		"print": "cpp"
+		"print": "cpp",
+		"barrier": "cpp"
 	}
 }
