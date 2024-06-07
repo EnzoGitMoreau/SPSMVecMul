@@ -1,7 +1,7 @@
 CXX = g++
 CC = gcc
 
-
+OPENBLAS_DIR = /opt/homebrew/Cellar/openblas/0.3.27
 OPENMP_DIR = /opt/Homebrew/Cellar/libomp/18.1.6
 
 CURRENT_DIR = $(shell pwd)
