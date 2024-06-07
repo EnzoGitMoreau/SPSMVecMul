@@ -23,7 +23,7 @@ LIBS = -lboost_thread -lopenblas
 SRCS = $(SRC_PATH)/main.cpp \
  $(SRC_PATH)/sparmatsymblk.cc \
  $(SRC_PATH)/MatSymBMtInstance.cpp \
- $(SRC_PATH)/matsym.cc
+ 
 
 OBJS = $(SRCS:.cpp=.o)
 OBJS := $(OBJS:.cc=.o)
