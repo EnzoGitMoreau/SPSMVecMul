@@ -103,6 +103,5 @@ public:
     void transVecMulAddBlock3(const real* __restrict__ X1, const real* __restrict__ X2,real* __restrict__ Y1,  real* __restrict__ Y2, int blocksize, int matsize, const real* __restrict__ valptr )const;
     /// true if matrix is non-zero
     void transVecMulAddBlock4(const real* __restrict__ X1, const real* __restrict__ X2,real* __restrict__ Y1,  real* __restrict__ Y2, int blocksize, int matsize, const real* __restrict__ valptr )const;
-   
-
+}
 #endif
