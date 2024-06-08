@@ -568,7 +568,7 @@ public:
         }
      }
     
-    void workThread(boost::barrier& barrier2, int thNb)
+    void workThread(boost::barrier& barrier2, int thID)
     {
         
         
@@ -601,12 +601,12 @@ public:
             //std::cout<<"\nStart of phase"<<k<<"\n";
             
             _mutex.lock();
-            work =  workingPhases[k][thNb];
-            work_nb = work_lengths[k][thNb];
-            unsigned short* index = workingIndexes7[k][thNb];
+            work =  workingPhases[k][thID];
+            work_nb = work_lengths[k][thID];
+            unsigned short* index = workingIndexes7[k][thID];
             
-            int ix_f = firstBlocks[k][thNb]%65535;
-            int iy_f = firstBlocks[k][thNb]/65535;
+            int ix_f = firstBlocks[k][thID]%65535;
+            int iy_f = firstBlocks[k][thID]/65535;
             _mutex.unlock();
             
             int pad = 0;
@@ -892,7 +892,7 @@ public:
             k++;
         }
 }
-    void workThread2(boost::barrier& barrier2, int thNb)
+    void workThread2(boost::barrier& barrier2, int thID)
     {
         
         
@@ -909,9 +909,9 @@ public:
             //std::cout<<"\nStart of phase"<<k<<"\n";
             
             _mutex.lock();
-            work =  workingPhases[k][thNb];
-            work_nb = work_lengths[k][thNb];
-            int* index = workingIndexes[k][thNb];
+            work =  workingPhases[k][thID];
+            work_nb = work_lengths[k][thID];
+            int* index = workingIndexes[k][thID];
             _mutex.unlock();
             
             for(int m = 0; m<work_nb; m++)
