@@ -10,7 +10,8 @@
 #include <barrier>
 #include <thread>
 #include <stdio.h>
-#include <arm_neon.h>
+
+
 #include "sparmatsymblk.h"
 #include "real.h"
 
