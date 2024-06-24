@@ -198,7 +198,7 @@ int main(int argc, char* argv[])
         }
         if(size%(nb_threads*4)!= 0)
         {
-            size = (int)(size / nb_threads) *nb_threads;
+            size = (int)(size / (4*nb_threads)) *4*nb_threads;
            
         }
         if(argc >=5)
@@ -230,7 +230,7 @@ int main(int argc, char* argv[])
 
     
     //Selecting blocks
-    std::vector<std::pair<int, int>> pairs = select_random_points(size/4,(int) size*size/16 * block_percentage);
+    std::vector<std::pair<int, int>> pairs = select_random_points(size/4,(int) size*size/16 * block_percentage*block_percentage);
     //Init SPSM
     SparMatSymBlk testMatrix = SparMatSymBlk();
     testMatrix.allocate(size);
@@ -239,7 +239,7 @@ int main(int argc, char* argv[])
     add_block_to_pos_std(&testMatrix, pairs, size);
     testMatrix.prepareForMultiply(1);
     //End of SPSM Init
-    std::cout<<"Constructed matrix of size "<<size<<" with "<<(int) size*size/16 * block_percentage <<" blocks of size 4, preparing to do "<<nMatrix<<" multiplications";
+    std::cout<<"Constructed matrix of size "<<size<<" with "<<(int) size*size/16 * block_percentage*block_percentage <<" blocks of size 4, preparing to do "<<nMatrix<<" multiplications";
     
     omp_set_num_threads(nb_threads);
 

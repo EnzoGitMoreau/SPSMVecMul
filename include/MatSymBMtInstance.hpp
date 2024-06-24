@@ -7,13 +7,12 @@
 
 #ifndef MatSymBMtInstance_hpp
 #define MatSymBMtInstance_hpp
-
+#include <barrier>
+#include <thread>
 #include <stdio.h>
 #include <arm_neon.h>
 #include "sparmatsymblk.h"
 #include "real.h"
-#include "boost/thread.hpp"
-#include <boost/thread/barrier.hpp>
 
 class MatSymBMtInstance final
 {
@@ -21,7 +20,7 @@ private:
     int phase_number;
     int* phase_tab;
     int nbThreads;
-    boost::mutex _mutex;
+    std::mutex _mutex;
     int big_mat_size;
     real* Y1;
     int blocksize = 4;
@@ -531,7 +530,7 @@ public:
     }
    
     
-    void work(boost::barrier& barrier,boost::barrier& barrier2, int n_work)
+    void work(std::barrier<>& barrier,std::barrier<>& barrier2, int n_work)
     {
         _mutex.lock();
         int thread_nb = thread_number();
@@ -541,14 +540,14 @@ public:
         for(int m = 0; m<n_work;m++)
         {
             workThread(barrier2, thread_nb);
-            barrier.wait();
+            barrier.arrive_and_wait();
         }
         
         
         
         
     }
-    void work2(boost::barrier& barrier,boost::barrier& barrier2, int n_work)
+    void work2(std::barrier<>& barrier,std::barrier<>& barrier2, int n_work)
     {
         _mutex.lock();
         int thread_nb = thread_number();
@@ -558,7 +557,7 @@ public:
         for(int m = 0; m<n_work;m++)
         {
             workThread2(barrier2, thread_nb);
-            barrier.wait();
+            barrier.arrive_and_wait();
         }
         
         
@@ -566,7 +565,7 @@ public:
         
     }
     
-    void workThread(boost::barrier& barrier2, int thNb)
+    void workThread(std::barrier<>& barrier2, int thNb)
     {
         
         
@@ -908,11 +907,11 @@ public:
                 }
             }
             
-            barrier2.wait();
+            barrier2.arrive_and_wait();
             k++;
         }
 }
-    void workThread2(boost::barrier& barrier2, int thNb)
+    void workThread2(std::barrier<>& barrier2, int thNb)
     {
         
         
@@ -1104,7 +1103,7 @@ public:
                 }
             }
             
-            barrier2.wait();
+            barrier2.arrive_and_wait();
             k++;
         }
 }
@@ -1117,25 +1116,21 @@ public:
      
         try
         {
-            boost::thread* threads = (boost::thread*) malloc(sizeof(boost::thread)*nbThreads);
-            boost::barrier bar(nbThreads);
-            boost::barrier bar2(nbThreads);
+            std::vector<std::thread> threads;
+            std::barrier bar(nbThreads);
+            std::barrier bar2(nbThreads);
             for(int i=0;i<nbThreads; i++)
             {
-                threads[i] = boost::thread(boost::bind(&MatSymBMtInstance::work, this,boost::ref(bar),boost::ref(bar2), n_time));;
+                threads.emplace_back(&MatSymBMtInstance::work, this, std::ref(bar), std::ref(bar2), n_time);
             }
             
             
             
            
             
-            for(int i=0;i<nbThreads; i++)
+            for (auto& thread : threads)
             {
-                threads[i].join();
-            }
-            for(int i=0; i<nbThreads;i++)
-            {
-                threads[i].interrupt();
+                thread.join();
             }
         }
         catch (const std::exception &e)
@@ -1155,32 +1150,27 @@ public:
     }
     void vecMulAddnTimes2(const real*X_calc, real*Y, int n_time)
     {
-        //Start thread,
-        //Calculate, wait, calculate, wait..
+
         X= X_calc;
         generateBlocks2();
-        //generateBlocks4thWay();
+     
         try
         {
-            boost::thread* threads = (boost::thread*) malloc(sizeof(boost::thread)*nbThreads);
-            boost::barrier bar(nbThreads);
-            boost::barrier bar2(nbThreads);
+            std::vector<std::thread> threads;
+            std::barrier bar(nbThreads);
+            std::barrier bar2(nbThreads);
             for(int i=0;i<nbThreads; i++)
             {
-                threads[i] = boost::thread(boost::bind(&MatSymBMtInstance::work2, this,boost::ref(bar),boost::ref(bar2), n_time));;
+                threads.emplace_back(&MatSymBMtInstance::work2, this, std::ref(bar), std::ref(bar2), n_time);
             }
             
             
             
            
             
-            for(int i=0;i<nbThreads; i++)
+            for (auto& thread : threads)
             {
-                threads[i].join();
-            }
-            for(int i=0; i<nbThreads;i++)
-            {
-                threads[i].interrupt();
+                thread.join();
             }
         }
         catch (const std::exception &e)
@@ -1198,6 +1188,8 @@ public:
         
     
     }
+   
+
 };
 
 #endif /* MatSymBMtInstance_hpp */

@@ -10,12 +10,14 @@ std::vector<std::pair<int, int>> select_random_points(int n, int k) {
             all_points.push_back(std::make_pair(i, j));
         }
     }
+    k = k/2;//We are in symmetric representation -> 20% of full block = 20/2 % of possible coordinates  
+
 
     // Shuffle the vector of points
     std::mt19937 rng(std::random_device{}());
     std::shuffle(all_points.begin(), all_points.end(), rng);
 
-    // Select the first k points from the shuffled vector
+    
     std::vector<std::pair<int, int>> selected_points(all_points.begin(), all_points.begin() + k);
     return selected_points;
 }
