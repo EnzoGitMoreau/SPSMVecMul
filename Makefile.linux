@@ -37,7 +37,7 @@ $(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
 %.o : %.cc
-	$(CXX) $(CCFLAGS) $(INCLUDES) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
 profile:
 	$(MAKE) clean
