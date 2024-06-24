@@ -9,7 +9,9 @@
 #include "real.h"
 
 #include <cstdio>
+#ifdef MACOS 
 #include <arm_neon.h>
+#endif
 #include <string>
 
 
@@ -103,6 +105,7 @@ public:
     void transVecMulAddBlock3(const real* __restrict__ X1, const real* __restrict__ X2,real* __restrict__ Y1,  real* __restrict__ Y2, int blocksize, int matsize, const real* __restrict__ valptr )const;
     /// true if matrix is non-zero
     void transVecMulAddBlock4(const real* __restrict__ X1, const real* __restrict__ X2,real* __restrict__ Y1,  real* __restrict__ Y2, int blocksize, int matsize, const real* __restrict__ valptr )const;
+   #ifdef MACOS
     void matrix_multiply_4x4_neon(const real* __restrict__ X1, const real* __restrict__ X2,real* __restrict__ Y1,  real* __restrict__ Y2, int blocksize, int matsize, const real* __restrict__ valptr)const;
     void matrix_multiply_4x4_neonMid(const real* __restrict__ X1,real* __restrict__ Y1 ,int blocksize, int matsize, const real* __restrict__ valptr)const;
     
@@ -209,6 +212,7 @@ public:
                 
             
         }
+   #endif
     void vecMulPerBlock( const real* X, real* Y,size_t blocksize, int nbThread ) const;
     
     
