@@ -203,6 +203,14 @@ rsb::RsbMatrix<double> mtx(nrA, ncA); // Declarations of IA,JA,VA are all accept
     }
 mtx.close();
 mtx.spmv(RSB_TRANSPOSITION_N, 1.0, Vec, 0, res);
+
+    std::cout<<"Resultat:";
+    for(int i =0; i<size; i++)
+    {
+        std::cout<<Vec[i]<<" ";
+
+    }
+
     return res;
 
 
