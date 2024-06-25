@@ -193,8 +193,7 @@ rsb::RsbMatrix<double> mtx(nrA, ncA); // Declarations of IA,JA,VA are all accept
                 mtx.set_val((j/4.0), row*4 +i, col*4+j);
             }
         }
-        Matrix44* block= new Matrix44(0,1/4.0,2/4.0,3/4.0,1/4.0,2/4.0,3/4.0,4/4,2/4.0,3/4.0,4/4.0,5/4.0,3/4.0,4/4.0,5/4.0,6/4.0);
-		matrix->block(row,col).add_full(*block);
+    
         mtx.file_save();
     }
 
