@@ -202,14 +202,10 @@ rsb::RsbMatrix<double> mtx(nrA, ncA); // Declarations of IA,JA,VA are all accept
         res[i] = 0;
     }
 mtx.close();
+for (int i=0; i<nTests; i++)
+{
 mtx.spmv(RSB_TRANSPOSITION_N, 1.0, Vec, 0, res);
-
-    std::cout<<"Resultat:";
-    for(int i =0; i<size; i++)
-    {
-        std::cout<<res[i]<<" ";
-
-    }
+}
 
     return res;
 
@@ -288,7 +284,7 @@ int main(int argc, char* argv[])
     testMatrix.resize(size);
     testMatrix.reset();
     add_block_to_pos_std(&testMatrix, pairs, size);
-    rsb_matrix_vecmul(size, 10, pairs);
+    
     testMatrix.prepareForMultiply(1);
     //End of SPSM Init
     std::cout<<"Constructed matrix of size "<<size<<" with "<<(int) size*size/16 * block_percentage*block_percentage <<" blocks of size 4, preparing to do "<<nMatrix<<" multiplications";
@@ -308,6 +304,16 @@ int main(int argc, char* argv[])
     //outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
     outfile1.close();
     #endif 
+    std::cout<<"[INFO] Starting libRsb matrix-vector multiplications\n";
+    outfile1.open("res/librsb.csv", std::ios::app);
+    auto start = std::chrono::high_resolution_clock::now();
+    rsb_matrix_vecmul(size, nMatrix, pairs);
+    auto stop= std::chrono::high_resolution_clock::now();
+    
+    outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
+    outfile1.close();
+    std::cout<<"[INFO] libRsb multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
+
     std::cout<<"[INFO] Starting Cytosim matrix-vector multiplications\n";
     
    
