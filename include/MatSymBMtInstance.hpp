@@ -541,7 +541,7 @@ public:
         for(int m = 0; m<n_work;m++)
         {
             workThread(barrier2, thread_nb);
-            barrier.arrive_and_wait();
+        
         }
         
         
@@ -558,7 +558,7 @@ public:
         for(int m = 0; m<n_work;m++)
         {
             workThread2(barrier2, thread_nb);
-            barrier.arrive_and_wait();
+           
         }
         
         
@@ -908,7 +908,7 @@ public:
                 }
             }
             
-            barrier2.arrive_and_wait();
+                         
             k++;
         }
 }
@@ -1104,7 +1104,7 @@ public:
                 }
             }
             
-            barrier2.arrive_and_wait();
+           
             k++;
         }
 }
