@@ -6,7 +6,7 @@ OPENMP_DIR = /opt/Homebrew/Cellar/libomp/18.1.6
 ARM_PER_LIB = /opt/arm/armpl_24.04_flang-new_clang_18
 CURRENT_DIR = $(shell pwd)
 EXEC = tests
-CXXFLAGS =  -Xclang -std=c++20 -fopenmp=libomp -O3
+CXXFLAGS =  -Xclang -std=c++20 -fopenmp=libomp -O3 
 
 INCLUDES = -Iinclude/ \
 	-Ibin/boost_1_84_0/\
@@ -36,12 +36,12 @@ all:
 compile: $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $(LIB_DIRS) -o $(TARGET) $(OBJS) $(LIBS)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(LIB_DIRS) `librsb-config --static --ldflags --extra_libs` -o $(TARGET) $(OBJS) $(LIBS)
 %.o: %.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(INCLUDES) `librsb-config --I_opts`. -c $< -o $@
 
 %.o : %.cc
-	$(CXX) $(CCFLAGS) $(INCLUDES) -c $< -o $@
+	$(CXX) $(CCFLAGS) $(INCLUDES) `librsb-config --I_opts`. -c $< -o $@
 
 profile:
 	$(MAKE) clean
