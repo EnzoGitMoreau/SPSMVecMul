@@ -36,12 +36,12 @@ all:
 compile: $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $(LIB_DIRS) `librsb-config --static --ldflags --extra_libs` -o $(TARGET) $(OBJS) $(LIBS)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(LIB_DIRS)  -o $(TARGET) $(OBJS) $(LIBS)
 %.o: %.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES) `librsb-config --I_opts`. -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(INCLUDES)  -c $< -o $@
 
 %.o : %.cc
-	$(CXX) $(CCFLAGS) $(INCLUDES) `librsb-config --I_opts`. -c $< -o $@
+	$(CXX) $(CCFLAGS) $(INCLUDES) -c $< -o $@
 
 profile:
 	$(MAKE) clean
