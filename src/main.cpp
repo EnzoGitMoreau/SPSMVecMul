@@ -173,7 +173,7 @@ void fillSMSB(int nbBlocks, int matsize,int blocksize, SparMatSymBlk* matrix)
     }
 }
 #ifdef RSB 
-void rsb_matrix_vecmul(double* Vec, double*res ,rsb::RsbMatrix<double> mtx ,int nTests)
+void rsb_matrix_vecmul(double* Vec, double*res ,rsb::RsbMatrix<double>* mtx ,int nTests)
 {
   
 for (int i=0; i<nTests; i++)
