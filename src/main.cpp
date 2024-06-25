@@ -193,9 +193,10 @@ rsb::RsbMatrix<double> mtx(nrA, ncA); // Declarations of IA,JA,VA are all accept
                 mtx.set_val((j/4.0), row*4 +i, col*4+j);
             }
         }
-    
-        mtx.file_save();
     }
+mtx.close();
+mtx.file_save();
+    
 
 
 }
