@@ -176,17 +176,34 @@ void fillSMSB(int nbBlocks, int matsize,int blocksize, SparMatSymBlk* matrix)
 double* rsb_matrix_vecmul(int size, int nTests, std::vector<std::pair<int,int>> pairs)
 {
   rsb::RsbLib rsblib;
-  const int nnzA { 7 }, nrhs { 2 };
-  const int nrA { 6 }, ncA { 6 };
+  const rsb_coo_idx_t nrA { size }, ncA { size };
+  
   const std::vector<int>    IA {0,1,2,3,4,5,1};
   const int                 JA [] = {0,1,2,3,4,5,0};
+rsb::RsbMatrix<double> mtx(nrA, ncA); // Declarations of IA,JA,VA are all accepted via <span>
+
+  for (size_t k = 0; k < pairs.size(); k++) 
+	{ 
+        int row = pairs[k].first;
+        int col = pairs[k].second;
+        for(int i=0; i<4; i++)
+        {
+            for(int j=0; j<4;j++)
+            {
+                mtx.set_val((j/4.0), row*4 +i, col*4+j);
+            }
+        }
+        Matrix44* block= new Matrix44(0,1/4.0,2/4.0,3/4.0,1/4.0,2/4.0,3/4.0,4/4,2/4.0,3/4.0,4/4.0,5/4.0,3/4.0,4/4.0,5/4.0,6/4.0);
+		matrix->block(row,col).add_full(*block);
+        mtx.file_save();
+    }
+
   const std::vector<double> VA {1,1,1,1,1,1,2}, B(nrhs * ncA,1);
   std::array<double,nrhs * nrA> C;
   const double alpha {2}, beta {1};
 
   // The three arrays IA, JA, VA form a COO (Coordinate) representation of a 6x6 matrix
-  rsb::RsbMatrix<double> mtx(IA,JA,VA,nnzA); // Declarations of IA,JA,VA are all accepted via <span>
-
+  
   mtx.spmm(RSB_TRANSPOSITION_N, alpha, nrhs, RSB_FLAG_WANT_ROW_MAJOR_ORDER, B, beta, C);
 
 }
@@ -263,6 +280,7 @@ int main(int argc, char* argv[])
     testMatrix.resize(size);
     testMatrix.reset();
     add_block_to_pos_std(&testMatrix, pairs, size);
+    rsb_matrix_vecmul(size, 10, pairs);
     testMatrix.prepareForMultiply(1);
     //End of SPSM Init
     std::cout<<"Constructed matrix of size "<<size<<" with "<<(int) size*size/16 * block_percentage*block_percentage <<" blocks of size 4, preparing to do "<<nMatrix<<" multiplications";

@@ -42,7 +42,7 @@ void add_block_to_pos_std(SparMatSymBlk* matrix, std::vector<std::pair<int, int>
 	{ 
         int row = pairs[k].first;
         int col = pairs[k].second;
-        Matrix44* block= new Matrix44(0,1/4.0,2/4.0,3/4.0,1/4.0,2/4.0,3/4.0,4/4,2/4.0,3/4.0,4/4.0,5/4.0,3/4.0,4/4.0,5/4.0,6/4.0);
+        Matrix44* block= new Matrix44(1,2/4.0,3/4.0,4/4.0,1/4.0,2/4.0,3/4.0,4/4,1/4.0,2/4.0,3/4.0,4/4.0,1/4.0,2/4.0,3/4.0,4/4.0);
 		matrix->block(row,col).add_full(*block);
     }
 
