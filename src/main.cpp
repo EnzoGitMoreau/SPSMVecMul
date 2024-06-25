@@ -173,14 +173,29 @@ void fillSMSB(int nbBlocks, int matsize,int blocksize, SparMatSymBlk* matrix)
     }
 }
 #ifdef RSB 
-double* rsb_matrix_vecmul(int size, int nTests, std::vector<std::pair<int,int>> pairs)
+double* rsb_matrix_vecmul(double* Vec, double*res rsb::RsbMatrix<double> mtx ,int nTests)
 {
-  rsb::RsbLib rsblib;
+  
+   
+
+for (int i=0; i<nTests; i++)
+{
+mtx->spmv(RSB_TRANSPOSITION_N, 1.0, Vec, 0, res);
+}
+
+    return res;
+
+
+}
+
+rsb::RsbMatrix<double>* rsb_matrix_set(int size, std::vector<std::pair<int,int>> pairs)
+{
+    rsb::RsbLib rsblib;
   const rsb_coo_idx_t nrA { size }, ncA { size };
   
   const std::vector<int>    IA {0,1,2,3,4,5,1};
   const int                 JA [] = {0,1,2,3,4,5,0};
-rsb::RsbMatrix<double> mtx(nrA, ncA); // Declarations of IA,JA,VA are all accepted via <span>
+rsb::RsbMatrix<double>*mtx = new rsb::RsbMatrix<double>(nrA, ncA); // Declarations of IA,JA,VA are all accepted via <span>
 
   for (size_t k = 0; k < pairs.size(); k++) 
 	{ 
@@ -190,26 +205,12 @@ rsb::RsbMatrix<double> mtx(nrA, ncA); // Declarations of IA,JA,VA are all accept
         {
             for(int j=0; j<4;j++)
             {
-                mtx.set_val((j/4.0), row*4 +i, col*4+j);
+                mtx->set_val((j/4.0), row*4 +i, col*4+j);
             }
         }
     }
-    double* Vec = (double*)malloc(size*sizeof(double));
-    double* res = (double*)malloc(size*sizeof(double));
-    for(int i =0; i<size; i++)
-    {
-        Vec[i] = i;
-        res[i] = 0;
-    }
-mtx.close();
-for (int i=0; i<nTests; i++)
-{
-mtx.spmv(RSB_TRANSPOSITION_N, 1.0, Vec, 0, res);
-}
-
-    return res;
-
-
+    mtx->close();
+    return mtx;
 }
 #endif 
 
@@ -266,12 +267,14 @@ int main(int argc, char* argv[])
     real* Y_res = (real*)malloc(size * sizeof(real));//Y
     real* Y_true = (real*)malloc(size * sizeof(real));//Y_true to compare
     real* y_arm = (real*)malloc(size * sizeof(real));//Y_true to compare
+    real* Y_rsb = (real*)malloc(size * sizeof(real));//Y_true to compare
     real* Y_dif = (real*)malloc(size * sizeof(real));//Y_diff that will store differences
     for(int i=0; i<size;i++)
     {
         Vec[i]=i;//Init
         Y_res[i] = 0;
         Y_true[i] = 0;
+        Y_rsb[i] = 0
     }
     
 
@@ -307,7 +310,8 @@ int main(int argc, char* argv[])
     std::cout<<"[INFO] Starting libRsb matrix-vector multiplications\n";
     outfile1.open("res/librsb.csv", std::ios::app);
     auto start = std::chrono::high_resolution_clock::now();
-    rsb_matrix_vecmul(size, nMatrix, pairs);
+    rsb::RsbMatrix<double>*mtx = rsb_matrix_set(size, pairs);
+    rsb_matrix_vecmul(Vec, Y_rsb, mtx, nMatrix);
     auto stop= std::chrono::high_resolution_clock::now();
     
     outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
