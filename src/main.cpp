@@ -198,13 +198,6 @@ rsb::RsbMatrix<double> mtx(nrA, ncA); // Declarations of IA,JA,VA are all accept
         mtx.file_save();
     }
 
-  const std::vector<double> VA {1,1,1,1,1,1,2}, B(nrhs * ncA,1);
-  std::array<double,nrhs * nrA> C;
-  const double alpha {2}, beta {1};
-
-  // The three arrays IA, JA, VA form a COO (Coordinate) representation of a 6x6 matrix
-  
-  mtx.spmm(RSB_TRANSPOSITION_N, alpha, nrhs, RSB_FLAG_WANT_ROW_MAJOR_ORDER, B, beta, C);
 
 }
 #endif 
