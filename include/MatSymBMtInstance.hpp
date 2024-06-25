@@ -910,6 +910,7 @@ public:
             
                          
             k++;
+            barrier2.arrive_and_wait();
         }
 }
     void workThread2(std::barrier<>& barrier2, int thNb)
@@ -1106,6 +1107,7 @@ public:
             
            
             k++;
+            barrier2.arrive_and_wait();
         }
 }
 
