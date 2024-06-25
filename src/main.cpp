@@ -318,13 +318,12 @@ int main(int argc, char* argv[])
     
    
     outfile1.open("res/standard.csv", std::ios::app);
-    auto start = std::chrono::high_resolution_clock::now();
+    start = std::chrono::high_resolution_clock::now();
     for(int i=0; i<nMatrix;i++)
     {
         testMatrix.vecMulAdd(Vec, Y_true);
     }
-    
-    auto stop= std::chrono::high_resolution_clock::now();
+    stop= std::chrono::high_resolution_clock::now();
     
     outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
     outfile1.close();
