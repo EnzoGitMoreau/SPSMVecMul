@@ -207,7 +207,7 @@ mtx.spmv(RSB_TRANSPOSITION_N, 1.0, Vec, 0, res);
     std::cout<<"Resultat:";
     for(int i =0; i<size; i++)
     {
-        std::cout<<Vec[i]<<" ";
+        std::cout<<res[i]<<" ";
 
     }
 
