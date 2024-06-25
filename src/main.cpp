@@ -194,9 +194,16 @@ rsb::RsbMatrix<double> mtx(nrA, ncA); // Declarations of IA,JA,VA are all accept
             }
         }
     }
+    double* Vec = (double*)malloc(size*sizeof(double));
+    double* res = (double*)malloc(size*sizeof(double));
+    for(int i =0; i<size; i++)
+    {
+        Vec[i] = i;
+        res[i] = 0;
+    }
 mtx.close();
-mtx.file_save();
-    
+mtx.spmv(RSB_TRANSPOSITION_N, 1.0, Vec, 0, res);
+    return res;
 
 
 }
