@@ -9,16 +9,17 @@ EXEC = tests
 CXXFLAGS = -std=c++20  -fopenmp -O3 
 CCGLAGS = -std=c++20
 
-INCLUDES = -Iinclude/ 
+INCLUDES = -Iinclude/ -I/home/co-more1/local/librsb/include/
 	
        
 SRC_PATH = src
-LIB_DIRS = -L/home/co-more1/SPSMVecMul/bin/boost_1_84_0/stage/lib -L/usr/local/lib
+LIB_DIRS = -L/home/co-more1/SPSMVecMul/bin/boost_1_84_0/stage/lib -L/usr/local/lib -L/home/co-more1/local/librsb/lib /home/co-more1/local/librsb/lib/librsb.a -lm -lz
 LIBS = -lopenblas
 SRCS = $(SRC_PATH)/main.cpp \
  $(SRC_PATH)/sparmatsymblk.cc \
  $(SRC_PATH)/MatSymBMtInstance.cpp \
  $(SRC_PATH)/matsym.cc
+ 
 
 OBJS = $(SRCS:.cpp=.o)
 OBJS := $(OBJS:.cc=.o)
@@ -32,9 +33,9 @@ all:
 compile: $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $(LIB_DIRS) `librsb-config --static --ldflags --extra_libs` -o $(TARGET) $(OBJS) $(LIBS)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(LIB_DIRS)  -o $(TARGET) $(OBJS) $(LIBS)
 %.o: %.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES) `librsb-config --I_opts`. `librsb-config --I_opts`. -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(INCLUDES)  `librsb-config --I_opts`. -c $< -o $@
 
 %.o : %.cc
 	$(CXX) $(CXXFLAGS) $(INCLUDES) `librsb-config --I_opts`. -c $< -o $@
