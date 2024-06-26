@@ -320,7 +320,8 @@ int main(int argc, char* argv[])
     MatrixReader matrixReader(inputPath, &testMatrix,nb_threads);
     #endif 
     #ifdef RSB 
-
+    rsb::RsbLib rsblib;
+    rsb::RsbMatrix<double>* mtx = rsb_matrix_set(size, pairs);
     MatrixReader matrixReader(inputPath, &testMatrix, mtx,nb_threads);
     #endif
     std::cout<<"\n[INFO]Finished reading matrix";
@@ -374,7 +375,7 @@ testMatrix.prepareForMultiply(1);
     std::cout<<"[INFO] Starting libRsb matrix-vector multiplications\n";
     outfile1.open("res/librsb.csv", std::ios::app);
     start = std::chrono::high_resolution_clock::now();
-    rsb::RsbMatrix<double>* mtx = rsb_matrix_set(size, pairs);
+    
     rsb_matrix_vecmul(Vec, Y_rsb, mtx, nMatrix);
     stop= std::chrono::high_resolution_clock::now();
     outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
