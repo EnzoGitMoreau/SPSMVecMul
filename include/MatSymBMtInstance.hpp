@@ -907,8 +907,7 @@ public:
                     Y2_[3] += y23;
                 }
             }
-            
-                         
+
             k++;
             barrier2.arrive_and_wait();
         }

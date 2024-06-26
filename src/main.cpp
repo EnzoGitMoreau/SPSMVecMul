@@ -1,9 +1,8 @@
 
 
-#define CYTOSIM_ORIGINAL
-#define CYTOSIM_NEW
+
 //#define RSB 
-#define MACOS
+#define RSB
 #define MATRIXMARKET
 #include <stdio.h>
 #include <stdlib.h>
@@ -196,9 +195,6 @@ rsb::RsbMatrix<double>* rsb_matrix_set(int size, std::vector<std::pair<int,int>>
 {
     rsb::RsbLib rsblib;
   const rsb_coo_idx_t nrA { size }, ncA { size };
-  
-  const std::vector<int>    IA {0,1,2,3,4,5,1};
-  const int                 JA [] = {0,1,2,3,4,5,0};
 rsb::RsbMatrix<double>*mtx = new rsb::RsbMatrix<double>(nrA, ncA); // Declarations of IA,JA,VA are all accepted via <span>
 
   for (size_t k = 0; k < pairs.size(); k++) 
@@ -227,7 +223,7 @@ int main(int argc, char* argv[])
     std::__1::chrono::steady_clock::time_point start;
     std::__1::chrono::steady_clock::time_point stop;
     std::ofstream outfile1;
-    SparMatSymBlk testMatrix;
+    
     int blocksize = 4;
     int size;
     int nb_threads;
@@ -294,19 +290,7 @@ int main(int argc, char* argv[])
         
     }
     #endif
-    real* Vec = (real*)malloc(size * sizeof(real));//Defining vector to do MX
-    real* Y_res = (real*)malloc(size * sizeof(real));//Y
-    real* Y_true = (real*)malloc(size * sizeof(real));//Y_true to compare
-    real* y_arm = (real*)malloc(size * sizeof(real));//Y_true to compare
-    real* Y_rsb = (real*)malloc(size * sizeof(real));//Y_true to compare
-    real* Y_dif = (real*)malloc(size * sizeof(real));//Y_diff that will store differences
-    for(int i=0; i<size;i++)
-    {
-        Vec[i]=i;//Init
-        Y_res[i] = 0;
-        Y_true[i] = 0;
-        Y_rsb[i] = 0;
-    }
+    
     
 
     
@@ -331,16 +315,45 @@ int main(int argc, char* argv[])
     //Reading from a Matrix Market file 
     #ifdef MATRIXMARKET
     std::cout<<"Asked to read "<<inputPath<<" and to do "<<nMatrix<<" mult with "<<nb_threads<<" threads";
-    try
-    {
-    MatrixReader matrixReader(inputPath);
-    }
-    catch(std::runtime_error& error)
-    {
-        std::cerr<<error.what()<<std::endl;
-    }
+    SparMatSymBlk testMatrix;
+    #ifndef RSB 
+    MatrixReader matrixReader(inputPath, &testMatrix,nb_threads);
+    #endif 
+    #ifdef RSB 
+
+    MatrixReader matrixReader(inputPath, &testMatrix, mtx,nb_threads);
+    #endif
+    std::cout<<"\n[INFO]Finished reading matrix";
+    size = matrixReader.problemSize();
+
+
+
+
+    
+   
     #endif 
 
+    real* Vec = (real*)malloc(size * sizeof(real));//Defining vector to do MX
+    real* Y_res = (real*)malloc(size * sizeof(real));//Y
+    real* Y_true = (real*)malloc(size * sizeof(real));//Y_true to compare
+    real* y_arm = (real*)malloc(size * sizeof(real));//Y_true to compare
+    real* Y_rsb = (real*)malloc(size * sizeof(real));//Y_true to compare
+    real* Y_dif = (real*)malloc(size * sizeof(real));//Y_diff that will store differences
+    for(int i=0; i<size;i++)
+    {
+        Vec[i]=i;//Init
+        Y_res[i] = 0;
+        Y_true[i] = 0;
+        Y_rsb[i] = 0;
+    }
+
+testMatrix.prepareForMultiply(1);
+
+
+#define FINISHED
+#define CYTOSIM_NEW
+#define CYTOSIM_ORIGINAL
+#ifdef FINISHED
     //OpenMP settings according to user's number of threads 
     omp_set_num_threads(nb_threads);
     std::cout<<"\n[STARTUP] OpenMP is enabled with " << omp_get_max_threads() <<" threads\n";
@@ -394,13 +407,6 @@ int main(int argc, char* argv[])
     std::cout<<"[INFO] new-impl multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms";
     #endif
     
-    
-   
-
-
-    //Arm sparse linear algebra lib
-     
-
 
     int nbDiff = 0;
     
@@ -414,7 +420,7 @@ int main(int argc, char* argv[])
        
     }
 
-if(nbDiff !=0)
+if(nbDiff ==-3)
 {
     std::cout<<"Resultat computation originelle\n";
     for(int i =0; i< size; i++)
@@ -436,7 +442,7 @@ else
 {
         std::cout<<"\nComputation went well";
 }
-    
+#endif
     
  
 }

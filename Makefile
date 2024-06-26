@@ -6,7 +6,7 @@ OPENMP_DIR = /opt/Homebrew/Cellar/libomp/18.1.6
 ARM_PER_LIB = /opt/arm/armpl_24.04_flang-new_clang_18
 CURRENT_DIR = $(shell pwd)
 EXEC = tests
-CXXFLAGS =  -Xclang -std=c++20 -fopenmp=libomp -O3 
+CXXFLAGS =  -Xclang -std=c++20 -fopenmp=libomp  -g 
 
 INCLUDES = -Iinclude/ \
 	-Ibin/boost_1_84_0/\
