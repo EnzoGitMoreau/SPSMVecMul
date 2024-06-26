@@ -128,8 +128,8 @@ public:
 						matrix->resize(matrixSize);
 					}
 					
-					const rsb_coo_idx_t nrA { matrixSize }, ncA { matrixSize };
-					mtx = new rsb::RsbMatrix<double>(nrA, ncA);
+					//const rsb_coo_idx_t nrA { matrixSize }, ncA { matrixSize };
+					//mtx = new rsb::RsbMatrix<double>(nrA, ncA);
 				}
 				if(i>1)
 				{
@@ -140,12 +140,13 @@ public:
 					iss>>value;
 					real& value_in_matrix = matrix->element(i,j);
 					value_in_matrix = value;
-					mtx->set_val(value, i,j);
+					//mtx->set_val(value, i,j);
 				
 					
 				}
 				i++;
 			}
+			std::cout<<"[INFO] Done reading input Matrix \n";
 		}
 		
 
