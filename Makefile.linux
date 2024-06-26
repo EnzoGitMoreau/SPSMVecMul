@@ -6,7 +6,7 @@ OPENMP_DIR = /opt/Homebrew/Cellar/libomp/18.1.6
 
 CURRENT_DIR = $(shell pwd)
 EXEC = tests
-CXXFLAGS = -std=c++20  -fopenmp -O3 
+CXXFLAGS = -std=c++20  -fopenmp -O3  -g
 CCGLAGS = -std=c++20
 
 INCLUDES = -Iinclude/ `librsb-config --I_opts --cxxflags`

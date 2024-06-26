@@ -36,7 +36,7 @@ public:
 		return result;
 	}
 	
-	
+	#ifndef RSB
 	MatrixReader(std::string file_name, SparMatSymBlk* matrix, int nb_threads)
 	{
 		std::ifstream inputFile(file_name);
@@ -91,6 +91,7 @@ public:
 		
 
 	}
+	#endif
 	#ifdef RSB
 	MatrixReader(std::string file_name, SparMatSymBlk* matrix,rsb::RsbMatrix<double>* mtx, int nb_threads)
 	{
@@ -118,15 +119,15 @@ public:
 					std::cout<<"\n[INFO] Matrix Market's Matrix informations: \n";
 					std::cout << "[INFO] Matrix size: "<<matrixSize <<" Number of entries: "<<numberofEntries;
 					std::cout <<"\n[INFO] Reading and constructing Matrix";
-					if(matrixSize%(4*nb_threads) !=0)
-					{
-					matrix->resize((int(matrixSize/(4*nb_threads))+1)*(4*nb_threads));
+					//if(matrixSize%(4*nb_threads) !=0)
+					//{
+					//matrix->resize((int(matrixSize/(4*nb_threads))+1)*(4*nb_threads));
 
-					}
-					else
-					{
-						matrix->resize(matrixSize);
-					}
+					//}
+					//else
+					//{
+					//	matrix->resize(matrixSize);
+					//}
 					
 					//const rsb_coo_idx_t nrA { matrixSize }, ncA { matrixSize };
 					//mtx = new rsb::RsbMatrix<double>(nrA, ncA);
