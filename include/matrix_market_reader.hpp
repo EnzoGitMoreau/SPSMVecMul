@@ -92,7 +92,7 @@ public:
 
 	}
 	#ifdef RSB
-	MatrixReader(std::string file_name, SparMatSymBlk* matrix,rsb::RsbMatrix<double>*mtx, int nb_threads)
+	MatrixReader(std::string file_name, SparMatSymBlk* matrix,rsb::RsbMatrix<double>* mtx, int nb_threads)
 	{
 		std::ifstream inputFile(file_name);
 		if(!inputFile)
@@ -128,7 +128,7 @@ public:
 						matrix->resize(matrixSize);
 					}
 					rsb::RsbLib rsblib;
-					const rsb_coo_idx_t nrA { matrixSize }, ncA { matrixSize }
+					const rsb_coo_idx_t nrA { matrixSize }, ncA { matrixSize };
 					mtx = new rsb::RsbMatrix<double>(nrA, ncA);
 				}
 				if(i>1)
