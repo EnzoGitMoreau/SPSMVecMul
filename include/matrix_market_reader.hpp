@@ -127,7 +127,7 @@ public:
 					{
 						matrix->resize(matrixSize);
 					}
-					rsb::RsbLib rsblib;
+					
 					const rsb_coo_idx_t nrA { matrixSize }, ncA { matrixSize };
 					mtx = new rsb::RsbMatrix<double>(nrA, ncA);
 				}
