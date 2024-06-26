@@ -220,8 +220,8 @@ int main(int argc, char* argv[])
 
     using milli = std::chrono::milliseconds;
     std::string inputPath;
-    std::__1::chrono::steady_clock::time_point start;
-    std::__1::chrono::steady_clock::time_point stop;
+    std::chrono::steady_clock::time_point start;
+    std::chrono::steady_clock::time_point stop;
     std::ofstream outfile1;
     
     int blocksize = 4;
