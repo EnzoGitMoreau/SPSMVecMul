@@ -1,7 +1,15 @@
 
+
+#define CYTOSIM_ORIGINAL
+#define CYTOSIM_NEW
+//#define RSB 
+#define MACOS
+#define MATRIXMARKET
 #include <stdio.h>
 #include <stdlib.h>
-
+#ifdef MATRIXMARKET
+#include "matrix_market_reader.hpp"
+#endif
 #include "matsym.h"
 #include <iostream>
 #include "sparmatsymblk.h"
@@ -13,7 +21,7 @@
 #include <deque> 
 #include <tuple>
 #include "real.h"
-#define RSB 
+
 #ifdef RSB
 #include <rsb.hpp>
 #endif
@@ -215,11 +223,17 @@ int main(int argc, char* argv[])
 {
 
     using milli = std::chrono::milliseconds;
+    std::string inputPath;
+    std::__1::chrono::steady_clock::time_point start;
+    std::__1::chrono::steady_clock::time_point stop;
+    std::ofstream outfile1;
+    SparMatSymBlk testMatrix;
     int blocksize = 4;
     int size;
     int nb_threads;
     int nMatrix = 1;
     double block_percentage = 0.10;
+    #ifndef MATRIXMARKET
     if (argc < 4) {
         std::cerr << "Usage: tests nb_threads matSize" << std::endl;
         
@@ -258,7 +272,28 @@ int main(int argc, char* argv[])
         }
         }
     }
-   
+    #endif 
+    #ifdef MATRIXMARKET
+    if(argc < 4)
+    {
+        std::cerr << "Usage tests nbThreads nbMult matrixPath";
+        return 1;
+    }
+    else
+    {
+        try
+        {
+            nb_threads = std::stoi(argv[1]);
+            nMatrix = std::stoi(argv[2]);
+            inputPath = argv[3];
+        }
+        catch(const std::exception& e)
+        {
+            std::cerr << e.what() << '\n';
+        }
+        
+    }
+    #endif
     real* Vec = (real*)malloc(size * sizeof(real));//Defining vector to do MX
     real* Y_res = (real*)malloc(size * sizeof(real));//Y
     real* Y_true = (real*)malloc(size * sizeof(real));//Y_true to compare
@@ -278,7 +313,10 @@ int main(int argc, char* argv[])
     //Selecting blocks
     std::vector<std::pair<int, int>> pairs = select_random_points(size/4,(int) size*size/16 * block_percentage*block_percentage);
     //Init SPSM
-    SparMatSymBlk testMatrix = SparMatSymBlk();
+
+
+    #ifndef MATRIXMARKET
+    testMatrix = SparMatSymBlk();
     testMatrix.allocate(size);
     testMatrix.resize(size);
     testMatrix.reset();
@@ -287,36 +325,51 @@ int main(int argc, char* argv[])
     testMatrix.prepareForMultiply(1);
     //End of SPSM Init
     std::cout<<"Constructed matrix of size "<<size<<" with "<<(int) size*size/16 * block_percentage*block_percentage <<" blocks of size 4, preparing to do "<<nMatrix<<" multiplications";
-    std::ofstream outfile1;
-    omp_set_num_threads(nb_threads);
+    
+    #endif
+    
+    //Reading from a Matrix Market file 
+    #ifdef MATRIXMARKET
+    std::cout<<"Asked to read "<<inputPath<<" and to do "<<nMatrix<<" mult with "<<nb_threads<<" threads";
+    try
+    {
+    MatrixReader matrixReader(inputPath);
+    }
+    catch(std::runtime_error& error)
+    {
+        std::cerr<<error.what()<<std::endl;
+    }
+    #endif 
 
+    //OpenMP settings according to user's number of threads 
+    omp_set_num_threads(nb_threads);
     std::cout<<"\n[STARTUP] OpenMP is enabled with " << omp_get_max_threads() <<" threads\n";
     #ifdef MACOS
     std::cout<<"[STARTUP] ARM PL is working\n";
     
     outfile1.open("res/armpl.csv", std::ios::app);
     std::cout<<"[INFO] Starting ARMPL matrix-vector multiplications\n";
-    auto start = std::chrono::high_resolution_clock::now();
+    start = std::chrono::high_resolution_clock::now();
     //y_arm = amd_matrix_vecmul(size, nMatrix, pairs);
-    auto stop= std::chrono::high_resolution_clock::now();
+    stop= std::chrono::high_resolution_clock::now();
     std::cout<<"[INFO] ARMPL multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
     //outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
     outfile1.close();
     #endif 
+
+    #ifdef RSB
     std::cout<<"[INFO] Starting libRsb matrix-vector multiplications\n";
     outfile1.open("res/librsb.csv", std::ios::app);
-    auto start = std::chrono::high_resolution_clock::now();
+    start = std::chrono::high_resolution_clock::now();
     rsb::RsbMatrix<double>*mtx = rsb_matrix_set(size, pairs);
     rsb_matrix_vecmul(Vec, Y_rsb, mtx, nMatrix);
-    auto stop= std::chrono::high_resolution_clock::now();
-    
+    stop= std::chrono::high_resolution_clock::now();
     outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
     outfile1.close();
     std::cout<<"[INFO] libRsb multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
-
+    #endif 
+    #ifdef CYTOSIM_ORIGINAL
     std::cout<<"[INFO] Starting Cytosim matrix-vector multiplications\n";
-    
-   
     outfile1.open("res/standard.csv", std::ios::app);
     start = std::chrono::high_resolution_clock::now();
     for(int i=0; i<nMatrix;i++)
@@ -324,23 +377,22 @@ int main(int argc, char* argv[])
         testMatrix.vecMulAdd(Vec, Y_true);
     }
     stop= std::chrono::high_resolution_clock::now();
-    
     outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
     outfile1.close();
     std::cout<<"[INFO] Cytosim multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
-
+    #endif 
     
-    std::ofstream outfile2;
-    outfile2.open("res/newImpl.csv", std::ios::app);
+    #ifdef CYTOSIM_NEW
+    outfile1.open("res/newImpl.csv", std::ios::app);
     std::cout<<"[INFO] Starting new-impl matrix-vector multiplications\n";
     using milli = std::chrono::milliseconds;
     start = std::chrono::high_resolution_clock::now();
     testMatrix.vecMulMt2(nb_threads, Vec, Y_res,nMatrix);
     stop = std::chrono::high_resolution_clock::now();
-    outfile2 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
-    outfile2.close();
+    outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
+    outfile1.close();
     std::cout<<"[INFO] new-impl multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms";
-
+    #endif
     
     
    
