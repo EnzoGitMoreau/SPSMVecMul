@@ -7,7 +7,7 @@
 #include <vector>
 #include "matrix44.h"
 #include "sparmatsymblk.h"
-#define RSB
+
 #ifdef RSB
 #include <rsb.hpp>
 #endif
@@ -93,8 +93,10 @@ public:
 	}
 	#endif
 	#ifdef RSB
-	MatrixReader(std::string file_name, SparMatSymBlk* matrix,rsb::RsbMatrix<double>* mtx, int nb_threads)
+	MatrixReader(std::string file_name, SparMatSymBlk* matrix,rsb::RsbMatrix<double>** mtx_ptr, int nb_threads)
 	{
+		rsb::RsbLib rsblib;
+		
 		std::ifstream inputFile(file_name);
 		if(!inputFile)
 		{
@@ -106,7 +108,7 @@ public:
 			std::string ligne;
 			int i =0;
 			std::istringstream iss;
-			
+			short** already_put_index;
 			std::vector<std::string> splitLine;
 			
 			while (getline(inputFile, ligne)) 
@@ -119,18 +121,20 @@ public:
 					std::cout<<"\n[INFO] Matrix Market's Matrix informations: \n";
 					std::cout << "[INFO] Matrix size: "<<matrixSize <<" Number of entries: "<<numberofEntries;
 					std::cout <<"\n[INFO] Reading and constructing Matrix";
-					//if(matrixSize%(4*nb_threads) !=0)
-					//{
-					//matrix->resize((int(matrixSize/(4*nb_threads))+1)*(4*nb_threads));
+					if(matrixSize%(4*nb_threads) !=0)
+					{
+					matrix->resize((int(matrixSize/(4*nb_threads))+1)*(4*nb_threads));
 
-					//}
-					//else
-					//{
-					//	matrix->resize(matrixSize);
-					//}
+					}
+					else
+					{
+						matrix->resize(matrixSize);
+					}
 					
-					//const rsb_coo_idx_t nrA { matrixSize }, ncA { matrixSize };
-					//mtx = new rsb::RsbMatrix<double>(nrA, ncA);
+					const rsb_coo_idx_t nrA { matrixSize }, ncA { matrixSize };
+					*mtx_ptr = new rsb::RsbMatrix<double>(nrA, ncA);
+					
+					
 				}
 				if(i>1)
 				{
@@ -141,14 +145,27 @@ public:
 					iss>>value;
 					real& value_in_matrix = matrix->element(i,j);
 					value_in_matrix = value;
-					//mtx->set_val(value, i,j);
+					double errval = (*mtx_ptr)->get_val(i,j);
+					if(!errval)
+					{(*mtx_ptr)->set_val(value, i,j);
+						if(i!=j)
+						{
+						(*mtx_ptr)->set_val(value, j,i);
+						}}
+					
+					
+					
+
+					
 				
 					
 				}
 				i++;
 			}
+			(*mtx_ptr)->close();
 			std::cout<<"[INFO] Done reading input Matrix \n";
 		}
+	
 		
 
 	}

@@ -2,8 +2,9 @@
 
 
 //#define RSB 
-#define RSB
-#define MATRIXMARKET
+#include <cstdlib>
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #ifdef MATRIXMARKET
@@ -185,7 +186,7 @@ void rsb_matrix_vecmul(double* Vec, double*res ,rsb::RsbMatrix<double>* mtx ,int
   
 for (int i=0; i<nTests; i++)
 {
-mtx->spmv(RSB_TRANSPOSITION_N, 1.0, Vec, 0, res);
+mtx->spmv(RSB_TRANSPOSITION_N, 1.0, Vec, 1.0, res);
 }
 
 
@@ -223,6 +224,7 @@ int main(int argc, char* argv[])
     auto start = std::chrono::high_resolution_clock::now();
     auto stop= std::chrono::high_resolution_clock::now();
     std::ofstream outfile1;
+    SparMatSymBlk testMatrix;
     
     int blocksize = 4;
     int size;
@@ -295,18 +297,20 @@ int main(int argc, char* argv[])
 
     
     //Selecting blocks
-    std::vector<std::pair<int, int>> pairs = select_random_points(size/4,(int) size*size/16 * block_percentage*block_percentage);
+    
     //Init SPSM
 
 
     #ifndef MATRIXMARKET
-    testMatrix = SparMatSymBlk();
-    testMatrix.allocate(size);
+    std::vector<std::pair<int, int>> pairs = select_random_points(size/4,(int) size*size/16 * block_percentage*block_percentage);
+    std::cout<<"ici";
+    
+    
     testMatrix.resize(size);
     testMatrix.reset();
     add_block_to_pos_std(&testMatrix, pairs, size);
-    
-    testMatrix.prepareForMultiply(1);
+    testMatrix.printBlocks(std::cout);
+  
     //End of SPSM Init
     std::cout<<"Constructed matrix of size "<<size<<" with "<<(int) size*size/16 * block_percentage*block_percentage <<" blocks of size 4, preparing to do "<<nMatrix<<" multiplications";
     
@@ -315,14 +319,14 @@ int main(int argc, char* argv[])
     //Reading from a Matrix Market file 
     #ifdef MATRIXMARKET
     std::cout<<"Asked to read "<<inputPath<<" and to do "<<nMatrix<<" mult with "<<nb_threads<<" threads";
-    SparMatSymBlk testMatrix;
+    
     #ifndef RSB 
     MatrixReader matrixReader(inputPath, &testMatrix,nb_threads);
     #endif 
     #ifdef RSB 
     rsb::RsbLib rsblib;
-    rsb::RsbMatrix<double>* mtx = rsb_matrix_set(size, pairs);
-    MatrixReader matrixReader(inputPath, &testMatrix, mtx,nb_threads);
+    rsb::RsbMatrix<double>* mtx;
+    MatrixReader matrixReader(inputPath, &testMatrix,&mtx,nb_threads);
     #endif
     std::cout<<"\n[INFO]Finished reading matrix";
     size = matrixReader.problemSize();
@@ -342,7 +346,7 @@ int main(int argc, char* argv[])
     real* Y_dif = (real*)malloc(size * sizeof(real));//Y_diff that will store differences
     for(int i=0; i<size;i++)
     {
-        Vec[i]=i;//Init
+        Vec[i]=1;//Init
         Y_res[i] = 0;
         Y_true[i] = 0;
         Y_rsb[i] = 0;
@@ -351,23 +355,22 @@ int main(int argc, char* argv[])
 testMatrix.prepareForMultiply(1);
 
 
-#define FINISHED
-#define CYTOSIM_NEW
-#define CYTOSIM_ORIGINAL
-#ifdef FINISHED
+
+
+
     //OpenMP settings according to user's number of threads 
     omp_set_num_threads(nb_threads);
     std::cout<<"\n[STARTUP] OpenMP is enabled with " << omp_get_max_threads() <<" threads\n";
-    #ifdef MACOS
+    #ifdef ARMPL
     std::cout<<"[STARTUP] ARM PL is working\n";
     
     outfile1.open("res/armpl.csv", std::ios::app);
     std::cout<<"[INFO] Starting ARMPL matrix-vector multiplications\n";
     start = std::chrono::high_resolution_clock::now();
-    //y_arm = amd_matrix_vecmul(size, nMatrix, pairs);
+    y_arm = amd_matrix_vecmul(size, nMatrix, pairs);
     stop= std::chrono::high_resolution_clock::now();
     std::cout<<"[INFO] ARMPL multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
-    //outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
+    outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
     outfile1.close();
     #endif 
 
@@ -410,19 +413,25 @@ testMatrix.prepareForMultiply(1);
     
 
     int nbDiff = 0;
-    
+    double maxDiff =0;
     for(int i=0; i<size;i++)
     {
         Y_dif[i] = Y_res[i] - Y_true[i];
         if(Y_dif[i]!=0)
         {
+            if(Y_dif[i]>maxDiff)
+            {
+                maxDiff = Y_dif[i];
+            }
             nbDiff++;
         }
        
     }
 
-if(nbDiff ==-3)
+if(nbDiff !=0)
 {
+    if(maxDiff > 10e-3)
+    {
     std::cout<<"Resultat computation originelle\n";
     for(int i =0; i< size; i++)
     {
@@ -438,12 +447,18 @@ if(nbDiff ==-3)
     {
         std::cout<<Y_dif[i]<<" ";
     }
+
+    }
+    
+    std::cout<<"Small diff notified max:"<<maxDiff;
+    
+    
 }
 else
 {
         std::cout<<"\nComputation went well";
 }
-#endif
+
     
  
 }

@@ -7,6 +7,8 @@ ARM_PER_LIB = /opt/arm/armpl_24.04_flang-new_clang_18
 CURRENT_DIR = $(shell pwd)
 EXEC = tests
 CXXFLAGS =  -Xclang -std=c++20 -fopenmp=libomp  -g 
+VARS = -DMATRIXMARKET -DMACOS
+
 
 INCLUDES = -Iinclude/ \
 	-Ibin/boost_1_84_0/\
@@ -27,7 +29,10 @@ SRCS = $(SRC_PATH)/main.cpp \
 OBJS = $(SRCS:.cpp=.o)
 OBJS := $(OBJS:.cc=.o)
 TARGET = $(EXEC)
-
+classic:
+	$(MAKE) all VARS="-DMATRIXMARKET -DMACOS -DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW "
+matrixmarket:
+	$(MAKE) all VARS="-DMATRIXMARKET -DMACOS -DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW"
 all:
 	$(MAKE) clean
 	$(MAKE) compile
@@ -36,12 +41,12 @@ all:
 compile: $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $(LIB_DIRS)  -o $(TARGET) $(OBJS) $(LIBS)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(VARS) $(LIB_DIRS)  -o $(TARGET) $(OBJS) $(LIBS)
 %.o: %.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES)  -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(VARS) -c $< -o $@
 
 %.o : %.cc
-	$(CXX) $(CCFLAGS) $(INCLUDES) -c $< -o $@
+	$(CXX) $(CCFLAGS) $(INCLUDES) $(VARS) -c $< -o $@
 
 profile:
 	$(MAKE) clean

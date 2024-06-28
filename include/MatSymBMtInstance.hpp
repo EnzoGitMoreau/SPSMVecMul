@@ -8,10 +8,11 @@
 #ifndef MatSymBMtInstance_hpp
 #define MatSymBMtInstance_hpp
 #include <barrier>
+#include <fstream>
 #include <thread>
 #include <stdio.h>
 #include <mutex>
-
+#include <chrono>
 #include "sparmatsymblk.h"
 #include "real.h"
 
@@ -19,6 +20,7 @@ class MatSymBMtInstance final
 {
 private:
     int phase_number;
+    std::vector<int> valid_phase_index;
     int* phase_tab;
     int nbThreads;
     std::mutex _mutex;
@@ -26,9 +28,11 @@ private:
     real* Y1;
     int blocksize = 4;
     real* Y2;
+    std::ofstream tfile;
     const real* X;
     SparMatSymBlk* matrix;
     int thNb =0;
+    int threadBlockSize;
     real*** workingPhases;
     int*** workingIndexes;
     int** firstBlocks;
@@ -51,11 +55,22 @@ public:
     }
     void generateBlocks2()
     {
+        //tfile.open("test.txt", std::ios::app);
         phase_tab = (int*) malloc(sizeof(int)*nbThreads);
         phase_tab[0] = 0;
         if(nbThreads %2 == 0)
         {
             phase_number = nbThreads /2 +1;
+            if(nbThreads == 4)
+            {
+                phase_tab[0] = 0;
+                phase_tab[1] = 1;
+                phase_tab[2] = 2;
+                phase_tab[3] = 1;
+
+            }
+            else
+            {
             for(int i =1; i<=nbThreads/2;i++)
             {
                 phase_tab[i] = i;
@@ -65,6 +80,7 @@ public:
             {
                 phase_tab[nbThreads/2 + i] = nbThreads/2 - i;
                 //std::cout << phase_tab[nbThreads/2 + i] << " ";
+            }
             }
         }
         else
@@ -131,7 +147,7 @@ public:
         workingIndexes = (int***)malloc(sizeof(int**)*phase_number);
         
         QueueBlock*** phasesTemp = (QueueBlock***) malloc(sizeof(QueueBlock**) * phase_number);
-        int threadBlockSize = (int) matrix->size() / (S_BLOCK_SIZE * nbThreads);
+        threadBlockSize = (int) matrix->size() / (S_BLOCK_SIZE * nbThreads);
         int* phase_counter = (int*) malloc(sizeof(int)*phase_number);
         work_lengths = (int**) malloc(sizeof(int*)*phase_number);
         for(int i=0; i<phase_number;i++)
@@ -166,23 +182,14 @@ public:
                 for(int j=0; j<col->nbb_; j++)
                 {
                     int indice_ligne = col->inx_[j];
-                    //std::cout<<"Block position :"<<col->inx_[j]<<"-> ind_XB : "<<(int) col->inx_[j]/threadBlockSize<<"\n";
+                    //std::cout<<"Block position :"<<col->inx_[j]<<"-> ind_XB : "<<(int) col->inx_[j]/threadBlockSize<<"ind_YB:"<<indY<<"\n";
                     indX =col->inx_[j]/threadBlockSize;
-                    //std::cout<<"Put in phase: "<<phase_tab[indX-indY]<<"\n";
-                    int swap = 0;
-                    if(indX - indY >= 1+ (int)(nbThreads/2))
-                    {
-                        swap =1;
-                    }
-                    //swap = 0; // Le swap ne fonctionne pas encore.
+                
+                
+
+                
                     int phase =phase_tab[indX-indY];
-                    if(phase>0)
-                    {
-                        if(swap ==1)
-                        {
-                            // std::cout<<"\nWARNINGINININING\n";
-                        }
-                    }
+                   // std::cout<<"Chosen phase: "<<phase<<"\n";
                     //phasesTemp[phase][phase_counter[phase]%nbThreads]->push_front(Tuple2( indice_ligne, indice_col,swap, &matrix->block(col->inx_[j],matrix->colidx_[i])));
                     Block data;
                     Matrix44 matrix= col->blk_[j];
@@ -206,25 +213,14 @@ public:
                     data.index_x = indice_ligne * blocksize;
                     data.index_y = indice_col * blocksize;
                     
-                    if(swap==0)
-                    {
-                        
-                        phasesTemp[phase][indX]->push_front(data);
-                    }
-                    else
-                    {
-                        int temp = data.index_x;
-                        data.index_x = data.index_y;
-                        data.index_y = temp;
-                        phasesTemp[phase][indY]->push_front(data);
-                    }
+                  
+                    phasesTemp[phase][indX]->push_front(data);
+                  
                     
                     phase_counter[phase]++;
                     
                 }
-                //std::cout<<"\n\n";
             }
-            
             i = matrix->colidx_[i+1];
             if(i>=matrix->rsize_)
             {
@@ -233,7 +229,8 @@ public:
             }
             
         }
-        
+        std::ofstream outfile1;
+        outfile1.open("error.txt", std::ios::app);
         for(int i=0; i<phase_number; i++)//Putting in order for threads
         {
             for(int j=0; j<nbThreads;j++)
@@ -273,7 +270,7 @@ public:
                     workingPhases[i][j][16*m+15] = first.aF;
                     workingIndexes[i][j][2*m] = first.index_x;
                     workingIndexes[i][j][2*m+1] = first.index_y;
-                   // std::cout<<"Block sent : ("<<first.index_x<<", "<<first.index_y<<")"<<"\n";
+                    outfile1<<"Block sent : ("<<first.index_x<<", "<<first.index_y<<") ("<<i<<","<<j<<")"<<"\n";
                     
                     
                 }
@@ -281,6 +278,25 @@ public:
                 
             }
         }
+
+        outfile1<<"\n";
+        //Must add a way to remove empty phases (happens a lot)
+        for(int i =0; i<phase_number; i++)
+        {
+            //is the phase i Empty?
+            int count = 0;
+            
+            for(int thNb = 0; thNb<nbThreads; thNb++)
+            {
+                count += work_lengths[i][thNb];//Count total number of work in the phase
+            }
+            if(count>0)
+            {
+                valid_phase_index.emplace_back(i);
+            }
+        }
+        //We now know what phase we just do and which one we should not do
+
     }
     void generateBlocks()
     {
@@ -557,9 +573,12 @@ public:
         
         for(int m = 0; m<n_work;m++)
         {
+            barrier.arrive_and_wait();
             workThread2(barrier2, thread_nb);
-           
+            barrier.arrive_and_wait();
         }
+        barrier.arrive_and_wait();
+        std::cout<<"Finished";
         
         
         
@@ -597,12 +616,12 @@ public:
         while(k<phase_number)
         {
             //std::cout<<"\nStart of phase"<<k<<"\n";
-            
+
             _mutex.lock();
             work =  workingPhases[k][thNb];
             work_nb = work_lengths[k][thNb];
             unsigned short* index = workingIndexes7[k][thNb];
-            
+
             int ix_f = firstBlocks[k][thNb]%65535;
             int iy_f = firstBlocks[k][thNb]/65535;
             _mutex.unlock();
@@ -915,8 +934,10 @@ public:
     void workThread2(std::barrier<>& barrier2, int thNb)
     {
         
+
+        int active_work_count;
+        int j = 0;
         
-        int k = 0;
         real* work;
         int work_nb;
         
@@ -924,23 +945,34 @@ public:
         const real* X2;
         real* Y1_;
         real* Y2_;
-        while(k<phase_number)
+        int time1 = 0;
+        int time2 = 0;
+        int nb1 = 0;
+        int nb2 = 0;
+        
+        while(j<valid_phase_index.size())
         {
-            //std::cout<<"\nStart of phase"<<k<<"\n";
             
+            barrier2.arrive_and_wait();
             _mutex.lock();
+            int k  = valid_phase_index[j];
             work =  workingPhases[k][thNb];
+            
             work_nb = work_lengths[k][thNb];
             int* index = workingIndexes[k][thNb];
+            //tfile<<"(-"<<thNb<<","<<k<<"-)";
+            
             _mutex.unlock();
             
             for(int m = 0; m<work_nb; m++)
             {
-                
+                auto start = std::chrono::high_resolution_clock::now();
                 
                 int ix = index[m*2+0];
                 int iy = index[m*2+1];
-                
+                //_mutex.lock();
+                //std::cout<<"ix:"<<ix<<"iy:"<<iy<<"\n";
+                //_mutex.unlock();
         
                
               
@@ -961,9 +993,9 @@ public:
                 real aE = work[16*m+14];
                 real aF = work[16*m+15];
                 
-                if(ix-iy >=0)
+                if(ix-iy <= threadBlockSize || ix-iy==0)
                 {
-                    X1 = X  + iy;
+                    X1 = X  + iy; //no swap
                     X2 = X  + ix;
                     Y1_= Y1 + ix;
                     Y2_= Y2 + iy;
@@ -971,11 +1003,11 @@ public:
                 }
                 else
                 {
-                    
-                    X1 = X  + ix;
-                    X2 = X  + iy;
-                    Y2_= Y1 + ix;
-                    Y1_= Y2 + iy;
+                    //swap
+                    X1 = X  + iy;
+                    X2 = X  + ix;
+                    Y1_= Y2 + ix;
+                    Y2_= Y1 + iy;
                     
                     
                 }
@@ -1080,6 +1112,7 @@ public:
                         y23 += c *r23;
                     }
                     
+                    
                     Y1_[0] += y10;
                     Y1_[1] += y11;
                     Y1_[2] += y12;
@@ -1089,24 +1122,36 @@ public:
                     Y2_[2] += y22;
                     Y2_[3] += y23;
                     
+                 
                     
-                   
+
+                   auto stop = std::chrono::high_resolution_clock::now();
+                   time1 += std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
+                   nb1++;
                 }
                 else
                 {
-                    Matrix44* restored = new Matrix44(a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,aA,aB,aC,aD,aE,aF);
-                    Vector4 res1=restored->vecmul(X1);
-                    for(int i=0;i<4;i++)
-                    {
-                        Y1_[i] += res1[i];
-                        
-                    }
+                    auto stop = std::chrono::high_resolution_clock::now();
+                   
+                    Y2_[0] += a0 * X1[0] + a4 * X1[1] + a8 * X1[2] + aC * X1[3];
+                    Y2_[1] += a1 * X1[0] + a5 * X1[1] + a9 * X1[2] + aD * X1[3];
+                    Y2_[2] += a2 * X1[0] + a6 * X1[1] + aA * X1[2] + aE * X1[3];
+                    Y2_[3] += a3 * X1[0] + a7 * X1[1] + aB * X1[2] + aF * X1[3];
+                    _mutex.lock();
+                    tfile<<Y2_[1]+Y1_[1]<<"\n";
+                    _mutex.unlock();
+                    
+                    time2+= std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
+                    nb2++;
                 }
             }
             
            
-            k++;
+            j++;
+            
+            //std::cout<<"Thread number "<<thNb<<" times : "<<time1<<","<<time2<<"nbs:"<<nb1<<","<<nb2<<"\n";
             barrier2.arrive_and_wait();
+            
         }
 }
 
@@ -1133,7 +1178,9 @@ public:
             for (auto& thread : threads)
             {
                 thread.join();
+
             }
+            
         }
         catch (const std::exception &e)
         {
@@ -1154,8 +1201,14 @@ public:
     {
 
         X= X_calc;
+        using milli = std::chrono::milliseconds;
+        std::cout<<"[INFO]Starting MT calculation\n";
+        auto start = std::chrono::high_resolution_clock::now();
         generateBlocks2();
-     
+        auto stop = std::chrono::high_resolution_clock::now();
+       
+
+        std::cout<<"[INFO] Time spent in generateBlocks\n"<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms";
         try
         {
             std::vector<std::thread> threads;
@@ -1174,6 +1227,7 @@ public:
             {
                 thread.join();
             }
+         
         }
         catch (const std::exception &e)
         {
